@@ -1,0 +1,369 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 222.2 84% 4.9%;
+    --card: 0 0% 100%;
+    --card-foreground: 222.2 84% 4.9%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 222.2 84% 4.9%;
+    --primary: 262.1 83.2% 57.3%;
+    --primary-foreground: 210 40% 98%;
+    --secondary: 210 40% 96.1%;
+    --secondary-foreground: 222.2 47.4% 11.2%;
+    --muted: 210 40% 96.1%;
+    --muted-foreground: 215.4 16.3% 46.9%;
+    --accent: 210 40% 96.1%;
+    --accent-foreground: 222.2 47.4% 11.2%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 214.3 31.8% 91.4%;
+    --input: 214.3 31.8% 91.4%;
+    --ring: 262.1 83.2% 57.3%;
+    --radius: 0.5rem;
+
+    /* Custom PsycheNote palette */
+    --psyche-purple: 262.1 83.2% 57.3%;
+    --psyche-pink: 340 75% 70%;
+    --psyche-mint: 122 39% 50%;
+    --psyche-yellow: 55 100% 88%;
+    --psyche-blue: 210 100% 94%;
+    --psyche-green: 122 50% 90%;
+    --psyche-peach: 340 80% 90%;
+  }
+
+  .dark {
+    --background: 222.2 84% 4.9%;
+    --foreground: 210 40% 98%;
+    --card: 222.2 84% 4.9%;
+    --card-foreground: 210 40% 98%;
+    --popover: 222.2 84% 4.9%;
+    --popover-foreground: 210 40% 98%;
+    --primary: 217.2 91.2% 59.8%;
+    --primary-foreground: 222.2 47.4% 11.2%;
+    --secondary: 217.2 32.6% 17.5%;
+    --secondary-foreground: 210 40% 98%;
+    --muted: 217.2 32.6% 17.5%;
+    --muted-foreground: 215 20.2% 65.1%;
+    --accent: 217.2 32.6% 17.5%;
+    --accent-foreground: 210 40% 98%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 217.2 32.6% 17.5%;
+    --input: 217.2 32.6% 17.5%;
+    --ring: 224.3 76.3% 48%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}
+
+/* ============================================
+   Floating Decorations - 从底部上升旋转动画
+   ============================================ */
+@keyframes floatRise {
+  0% {
+    transform: translateY(0) rotate(0deg) scale(0.6);
+    opacity: 0;
+  }
+  8% {
+    opacity: 0.9;
+    transform: translateY(-60px) rotate(30deg) scale(1);
+  }
+  85% {
+    opacity: 0.3;
+  }
+  100% {
+    transform: translateY(-900px) rotate(360deg) scale(0.7);
+    opacity: 0;
+  }
+}
+
+.float-decoration {
+  position: fixed;
+  bottom: -60px;
+  pointer-events: none;
+  user-select: none;
+  animation-name: floatRise;
+  animation-timing-function: ease-out;
+  animation-iteration-count: infinite;
+}
+
+/* ============================================
+   Mood Background: Calm (平静)
+   上紫下粉渐变 + 白色圆点闪烁效果
+   ============================================ */
+.mood-bg-calm {
+  background: linear-gradient(180deg, #a855f7 0%, #c084fc 40%, #f9a8d4 100%);
+}
+
+/* 平静 - 白色圆点 (上部分紫色区域) */
+@keyframes calmDot {
+  0%,
+  100% {
+    transform: scale(1);
+    opacity: 0.7;
+  }
+  50% {
+    transform: scale(1.5);
+    opacity: 1;
+  }
+}
+
+.calm-dot {
+  position: absolute;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.6);
+  animation: calmDot var(--dot-duration, 3s) ease-in-out infinite;
+  box-shadow: 0 0 6px rgba(255, 255, 255, 0.4);
+}
+
+/* ============================================
+   Mood Background: Happy (开心)
+   上蓝白、下浅绿渐变 + 云朵摇摆 + 右上角太阳
+   ============================================ */
+.mood-bg-happy {
+  background: linear-gradient(180deg, #dbeafe 0%, #ffffff 40%, #bbf7d0 100%);
+}
+
+/* 开心 - 云朵摇摆 */
+@keyframes cloudSway {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  25% {
+    transform: translateX(12px);
+  }
+  75% {
+    transform: translateX(-12px);
+  }
+}
+
+.happy-cloud {
+  position: absolute;
+  animation: cloudSway var(--cloud-duration, 2.5s) ease-in-out infinite;
+  opacity: 0.85;
+}
+
+/* 开心 - 太阳大小变化 */
+@keyframes sunPulse {
+  0%,
+  100% {
+    transform: scale(1);
+    opacity: 0.9;
+  }
+  50% {
+    transform: scale(1.15);
+    opacity: 1;
+  }
+}
+
+.happy-sun {
+  position: absolute;
+  border-radius: 50%;
+  background: radial-gradient(circle, #fef08a 0%, #fbbf24 60%, #f59e0b 100%);
+  box-shadow:
+    0 0 40px rgba(251, 191, 36, 0.6),
+    0 0 80px rgba(251, 191, 36, 0.3);
+  animation: sunPulse 4s ease-in-out infinite;
+}
+
+/* ============================================
+   Mood Background: Excited (兴奋)
+   #f9d8b8 → #f8c8d0 渐变 + 上半部分小火焰摇摆
+   ============================================ */
+.mood-bg-excited {
+  background: linear-gradient(180deg, #f9d8b8 0%, #f8c8d0 100%);
+}
+
+/* 兴奋 - 火焰摇摆 */
+@keyframes flameSway {
+  0%,
+  100% {
+    transform: rotate(-8deg) scale(1);
+  }
+  50% {
+    transform: rotate(8deg) scale(1.08);
+  }
+}
+
+.excited-flame {
+  position: absolute;
+  animation: flameSway var(--flame-duration, 1.8s) ease-in-out infinite;
+  transform-origin: bottom center;
+  filter: drop-shadow(0 0 4px rgba(255, 100, 50, 0.5));
+}
+
+/* ============================================
+   Mood Background: Unhappy (不开心)
+   #cdd6e0 → #bcc8d8 渐变 + 乌云摇摆
+   ============================================ */
+.mood-bg-unhappy {
+  background: linear-gradient(180deg, #cdd6e0 0%, #bcc8d8 100%);
+}
+
+/* 不开心 - 乌云 (同开心云朵摆动方式) */
+.unhappy-cloud {
+  position: absolute;
+  animation: cloudSway var(--cloud-duration, 2.5s) ease-in-out infinite;
+  opacity: 0.7;
+  font-size: var(--cloud-size, 32px);
+}
+
+/* ============================================
+   Mood Background: Anxious (焦虑)
+   #d9d2e2 → #c9c1d6 渐变 + 卡通文字标语摇摆
+   ============================================ */
+.mood-bg-anxious {
+  background: linear-gradient(180deg, #d9d2e2 0%, #c9c1d6 100%);
+}
+
+/* 焦虑 - 标语文字摇摆 */
+@keyframes phraseSway {
+  0%,
+  100% {
+    transform: rotate(-5deg) translateX(0);
+  }
+  50% {
+    transform: rotate(5deg) translateX(8px);
+  }
+}
+
+.anxious-phrase {
+  position: absolute;
+  font-family: 'Nunito', sans-serif;
+  font-size: var(--phrase-size, 18px);
+  font-weight: 800;
+  color: white;
+  text-shadow:
+    2px 2px 4px rgba(0, 0, 0, 0.3),
+    -1px -1px 2px rgba(255, 255, 255, 0.5);
+  animation: phraseSway var(--phrase-duration, 2s) ease-in-out infinite;
+  white-space: nowrap;
+}
+
+/* ============================================
+   Cat Companion Animations
+   每10秒触发一次，动作结束后恢复蹲着
+   ============================================ */
+
+/* 平静 - 打哈欠蜷缩 */
+@keyframes catCalm {
+  0%,
+  100% {
+    transform: scale(1) rotate(0deg);
+  }
+  20% {
+    transform: scale(1.1) rotate(-5deg);
+  }
+  40% {
+    transform: scale(1.05) rotate(5deg);
+  }
+  60% {
+    transform: scale(1.15) rotate(-3deg);
+  }
+  80% {
+    transform: scale(1.1) rotate(3deg);
+  }
+}
+
+.cat-calm {
+  animation: catCalm 3s ease-in-out infinite;
+}
+
+/* 开心 - 摇尾巴 */
+@keyframes catHappy {
+  0%,
+  100% {
+    transform: rotate(0deg) scale(1);
+  }
+  25% {
+    transform: rotate(-15deg) scale(1.05);
+  }
+  50% {
+    transform: rotate(15deg) scale(1.05);
+  }
+  75% {
+    transform: rotate(-10deg) scale(1.02);
+  }
+}
+
+.cat-happy {
+  animation: catHappy 2.5s ease-in-out infinite;
+}
+
+/* 兴奋 - 跳跃 */
+@keyframes catExcited {
+  0%,
+  100% {
+    transform: translateY(0) scale(1);
+  }
+  30% {
+    transform: translateY(-25px) scale(1.1);
+  }
+  60% {
+    transform: translateY(-15px) scale(1.05);
+  }
+  80% {
+    transform: translateY(-5px) scale(1.02);
+  }
+}
+
+.cat-excited {
+  animation: catExcited 2s ease-in-out infinite;
+}
+
+/* 不开心 - 低头叹气 */
+@keyframes catUnhappy {
+  0%,
+  100% {
+    transform: translateY(0) scale(1);
+  }
+  30% {
+    transform: translateY(5px) scale(0.95);
+  }
+  60% {
+    transform: translateY(8px) scale(0.9);
+  }
+  80% {
+    transform: translateY(3px) scale(0.95);
+  }
+}
+
+.cat-unhappy {
+  animation: catUnhappy 3.5s ease-in-out infinite;
+}
+
+/* 焦虑 - 踱步 */
+@keyframes catAnxious {
+  0%,
+  100% {
+    transform: translateX(0) rotate(0deg);
+  }
+  20% {
+    transform: translateX(-8px) rotate(-5deg);
+  }
+  40% {
+    transform: translateX(8px) rotate(5deg);
+  }
+  60% {
+    transform: translateX(-5px) rotate(-3deg);
+  }
+  80% {
+    transform: translateX(5px) rotate(3deg);
+  }
+}
+
+.cat-anxious {
+  animation: catAnxious 3s ease-in-out infinite;
+}
