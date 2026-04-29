@@ -1,83 +1,82 @@
 @echo off
-chcp 65001 >nul
+chcp 65001 >nul 2>&1
 echo ========================================
-echo   PsycheNote Canvas 一键启动脚本
+echo   PsycheNote Canvas - One-Click Start
 echo ========================================
 echo.
 
-:: 检查 Node.js 是否安装
+:: Check Node.js
 where node >nul 2>&1
 if %errorlevel% neq 0 (
-    echo [错误] 未检测到 Node.js！
-    echo 请先从 https://nodejs.org 下载并安装 Node.js
+    echo [ERROR] Node.js is not installed!
+    echo Please download from https://nodejs.org
     echo.
     pause
     exit /b 1
 )
 
-:: 获取 Node.js 版本
 for /f "tokens=*" %%i in ('node -v') do set NODE_VERSION=%%i
-echo [OK] 检测到 Node.js %NODE_VERSION%
+echo [OK] Node.js %NODE_VERSION% detected
 
-:: 检查 API 密钥配置
+:: Check API Key configuration
 echo.
-echo [配置] 检查 API 密钥...
+echo [CONFIG] Checking API Key...
 if not exist "backend\.env" (
-    echo [提示] 首次运行，需要配置 MiniMax API 密钥
-    echo 请到 https://platform.minimaxi.com/ 注册并获取 API Key
+    echo [INFO] First time setup - API Key required
+    echo Please register at https://platform.minimaxi.com/
     echo.
-    set /p API_KEY=请输入你的 API Key:
+    set /p API_KEY=Enter your API Key:
     if "%API_KEY%"=="" (
-        echo [错误] API Key 不能为空！
+        echo [ERROR] API Key cannot be empty!
         pause
         exit /b 1
     )
     echo MINIMAX_API_KEY=%API_KEY% > "backend\.env"
-    echo [OK] API 密钥已保存到 backend\.env
+    echo [OK] API Key saved to backend\.env
 ) else (
-    echo [OK] API 密钥已配置
+    echo [OK] API Key already configured
 )
 
-:: 检查前端依赖
+:: Check frontend dependencies
 echo.
-echo [1/4] 检查前端依赖...
+echo [1/4] Checking frontend dependencies...
 if not exist "node_modules" (
-    echo [安装] 正在安装前端依赖...
+    echo [INSTALL] Installing frontend dependencies...
     call npm install
 ) else (
-    echo [OK] 前端依赖已安装
+    echo [OK] Frontend dependencies ready
 )
 
-:: 检查后端依赖
+:: Check backend dependencies
 echo.
-echo [2/4] 检查后端依赖...
+echo [2/4] Checking backend dependencies...
 if not exist "backend\node_modules" (
-    echo [安装] 正在安装后端依赖...
+    echo [INSTALL] Installing backend dependencies...
     cd backend
     call npm install
     cd ..
 ) else (
-    echo [OK] 后端依赖已安装
+    echo [OK] Backend dependencies ready
 )
 
-:: 启动后端服务
+:: Start backend
 echo.
-echo [3/4] 启动后端服务 (端口 3001)...
+echo [3/4] Starting backend service (port 3001)...
 start "PsycheNote Backend" cmd /k "cd /d %~dp0backend && node server.js"
 
-:: 等待后端启动
 timeout /t 2 /nobreak >nul
 
-:: 启动前端服务
-echo [4/4] 启动前端服务 (端口 3000)...
+:: Start frontend
+echo [4/4] Starting frontend service (port 3000)...
 start "PsycheNote Frontend" cmd /k "npm run dev"
 
 echo.
 echo ========================================
-echo   启动完成！
-echo   - 后端: http://localhost:3001
-echo   - 前端: http://localhost:3000
+echo   Done!
+echo   - Backend: http://localhost:3001
+echo   - Frontend: http://localhost:3000
 echo ========================================
 echo.
-echo 按任意键退出此窗口（服务继续在后台运行）...
+echo Press any key to close this window...
+echo (Services will keep running in background)
 pause >nul
