@@ -1,5 +1,7 @@
 # Dependencies
 node_modules
+# Backend dependencies
+backend/node_modules
 
 # Next.js
 .next
@@ -24,6 +26,10 @@ yarn-error.log*
 # Local env files
 .env
 .env.local
+.env*.local
+# Backend env files (contains API keys)
+backend/.env
+backend/.env.local
 .env.development.local
 .env.test.local
 .env.production.local

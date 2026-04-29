@@ -4,6 +4,10 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
+    "dev:all": "node scripts/start.js",
+    "start:frontend": "npm run dev",
+    "start:backend": "cd backend && node server.js",
+    "install:all": "npm install && cd backend && npm install",
     "build": "next build",
     "start": "next start",
     "lint": "next lint",

@@ -1,7 +1,17 @@
-import { useMemo } from 'react';
+'use client';
+
+import { useState, useMemo } from 'react';
 
 import type { Note } from '@/types/note';
+import {
+  getWeekStart,
+  formatWeekLabel,
+  getWeekReport,
+  compareWeeks,
+  type WeekGroup,
+} from '@/utils/moodReportUtils';
 
+import MoodReportView from './MoodReportView';
 import NoteCard from './NoteCard';
 
 interface HistoryModalProps {
@@ -13,31 +23,9 @@ interface HistoryModalProps {
   onEditNote?: (note: Note) => void;
 }
 
-interface WeekGroup {
-  label: string;
-  notes: Note[];
-  weekStart: Date;
-}
-
-const getWeekStart = (date: Date): Date => {
-  const d = new Date(date);
-  const day = d.getDay();
-  const diff = d.getDate() - day + (day === 0 ? -6 : 1);
-  d.setDate(diff);
-  d.setHours(0, 0, 0, 0);
-  return d;
-};
-
-const formatWeekLabel = (weekStart: Date): string => {
-  const year = weekStart.getFullYear();
-  const month = weekStart.getMonth() + 1;
-  const firstDayOfYear = new Date(year, 0, 1);
-  const pastDaysOfYear = (weekStart.getTime() - firstDayOfYear.getTime()) / 86400000;
-  const weekNum = Math.ceil((pastDaysOfYear + firstDayOfYear.getDay() + 1) / 7);
-  return `${year}年${month}月第${weekNum}周`;
-};
-
 const HistoryModal = ({ notes, onClose, onDeleteNote, onEditNote }: HistoryModalProps) => {
+  const [activeTab, setActiveTab] = useState<'history' | 'report'>('history');
+
   const weekGroups = useMemo<WeekGroup[]>(() => {
     const groups: Map<string, WeekGroup> = new Map();
 
@@ -60,6 +48,17 @@ const HistoryModal = ({ notes, onClose, onDeleteNote, onEditNote }: HistoryModal
       (a, b) => b.weekStart.getTime() - a.weekStart.getTime()
     );
   }, [notes]);
+
+  const weekReportComparison = useMemo(() => {
+    if (weekGroups.length === 0) return null;
+
+    const currentReport = getWeekReport(weekGroups[0]);
+
+    const previousGroup = weekGroups.length > 1 ? weekGroups[1] : null;
+    const previousReport = previousGroup ? getWeekReport(previousGroup) : null;
+
+    return compareWeeks(currentReport, previousReport);
+  }, [weekGroups]);
 
   const currentGroup = weekGroups[0];
 
@@ -88,15 +87,57 @@ const HistoryModal = ({ notes, onClose, onDeleteNote, onEditNote }: HistoryModal
           </button>
         </div>
 
-        <div className="overflow-y-auto p-6" style={{ maxHeight: 'calc(80vh - 140px)' }}>
-          {currentGroup && (
-            <div>
-              <p className="text-sm text-gray-400 mb-3">{currentGroup.label}</p>
-              <div className="grid grid-cols-3 gap-3">
-                {currentGroup.notes.map(note => (
-                  <NoteCard key={note.id} note={note} onDelete={onDeleteNote} onEdit={onEditNote} />
-                ))}
-              </div>
+        {/* Tab 切换 */}
+        <div className="flex border-b border-gray-100">
+          <button
+            type="button"
+            onClick={() => setActiveTab('history')}
+            className={`flex-1 py-3 text-sm font-medium transition-colors ${
+              activeTab === 'history'
+                ? 'text-purple-600 border-b-2 border-purple-600'
+                : 'text-gray-400 hover:text-gray-600'
+            }`}
+          >
+            历史便签
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab('report')}
+            className={`flex-1 py-3 text-sm font-medium transition-colors ${
+              activeTab === 'report'
+                ? 'text-purple-600 border-b-2 border-purple-600'
+                : 'text-gray-400 hover:text-gray-600'
+            }`}
+          >
+            本周报告
+          </button>
+        </div>
+
+        {/* 内容区域 */}
+        <div className="overflow-y-auto" style={{ maxHeight: 'calc(80vh - 140px)' }}>
+          {activeTab === 'history' ? (
+            <div className="p-6">
+              {currentGroup ? (
+                <div>
+                  <p className="text-sm text-gray-400 mb-3">{currentGroup.label}</p>
+                  <div className="grid grid-cols-3 gap-3">
+                    {currentGroup.notes.map(note => (
+                      <NoteCard
+                        key={note.id}
+                        note={note}
+                        onDelete={onDeleteNote}
+                        onEdit={onEditNote}
+                      />
+                    ))}
+                  </div>
+                </div>
+              ) : (
+                <div className="text-center py-8 text-gray-400">暂无历史便签</div>
+              )}
+            </div>
+          ) : (
+            <div className="p-6">
+              <MoodReportView comparison={weekReportComparison} />
             </div>
           )}
         </div>

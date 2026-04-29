@@ -29,14 +29,14 @@ describe('useMood', () => {
       expect(result.current.currentMood).toBe('happy');
     });
 
-    it('应该使用 localStorage 存储的任何值（包括非法值）', () => {
-      // 注意：当前实现不验证 Mood 类型有效性，只要是 truthy 值就使用
+    it('应该忽略 localStorage 中的非法值并使用默认值', () => {
+      // useMood 实现会验证 Mood 类型有效性，非法值会被忽略
       localStorageGetSpy.mockReturnValue('invalid-mood');
 
       const { result } = renderHook(() => useMood());
 
-      // 当前实现：直接使用 localStorage 值，不做类型校验
-      expect(result.current.currentMood).toBe('invalid-mood');
+      // 非法值被忽略，使用默认值 calm
+      expect(result.current.currentMood).toBe('calm');
     });
 
     it('localStorage.getItem 应该只被调用一次', () => {

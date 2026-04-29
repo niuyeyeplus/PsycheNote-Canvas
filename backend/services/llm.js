@@ -1,7 +1,13 @@
 const https = require('https');
 
-const API_KEY =
-  'sk-cp-k8d7Dscc2uxkA8MkDBwjBSVf_jbJie1sn5sxC0XMxLin1JEd1UwOXBulTxisATWVkgOKmdIc4CN9oYUMGc-goZhOA0OmFP6B_tfbqqek7YFS3TZ6iGwpIa4';
+// API 密钥从环境变量读取，确保不要硬编码在代码中
+const API_KEY = process.env.MINIMAX_API_KEY;
+if (!API_KEY) {
+  console.error('[错误] 缺少 MINIMAX_API_KEY 环境变量！');
+  console.error('请创建 backend/.env 文件，添加: MINIMAX_API_KEY=你的API密钥');
+  process.exit(1);
+}
+
 const BASE_URL = 'api.minimaxi.com';
 const MODEL = 'MiniMax-M2';
 
