@@ -367,3 +367,73 @@
 .cat-anxious {
   animation: catAnxious 3s ease-in-out infinite;
 }
+
+/* ============================================
+   New Note Button Animation
+   顶点为中心，两边上下摆动，卡通风
+   ============================================ */
+@keyframes noteButtonBounce {
+  0%,
+  100% {
+    transform: translateY(0) rotate(0deg);
+  }
+  15% {
+    transform: translateY(-8px) rotate(-3deg);
+  }
+  30% {
+    transform: translateY(4px) rotate(2deg);
+  }
+  45% {
+    transform: translateY(-6px) rotate(-2deg);
+  }
+  60% {
+    transform: translateY(3px) rotate(1deg);
+  }
+  75% {
+    transform: translateY(-2px) rotate(-1deg);
+  }
+  90% {
+    transform: translateY(1px) rotate(0.5deg);
+  }
+}
+
+.note-button {
+  animation: noteButtonBounce 3s ease-in-out infinite;
+  box-shadow:
+    0 4px 12px rgba(0, 0, 0, 0.15),
+    0 2px 4px rgba(0, 0, 0, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.5);
+  border: 2px solid rgba(255, 255, 255, 0.6);
+}
+
+.note-button:hover {
+  box-shadow:
+    0 6px 16px rgba(0, 0, 0, 0.2),
+    0 3px 6px rgba(0, 0, 0, 0.15),
+    inset 0 1px 0 rgba(255, 255, 255, 0.6);
+}
+
+/* ============================================
+   LLM Reply Cloud Bubble Animation
+   从猫咪位置（右下角）从小到大弹出
+   ============================================ */
+@keyframes bubblePop {
+  0% {
+    transform: scale(0);
+    opacity: 0;
+  }
+  50% {
+    transform: scale(1.1);
+  }
+  75% {
+    transform: scale(0.95);
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.animate-bubble-pop {
+  animation: bubblePop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}

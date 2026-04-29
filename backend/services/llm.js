@@ -1,18 +1,18 @@
 const https = require('https');
 
-const API_KEY = 'sk-cp-k8d7Dscc2uxkA8MkDBwjBSVf_jbJie1sn5sxC0XMxLin1JEd1UwOXBulTxisATWVkgOKmdIc4CN9oYUMGc-goZhOA0OmFP6B_tfbqqek7YFS3TZ6iGwpIa4';
+const API_KEY =
+  'sk-cp-k8d7Dscc2uxkA8MkDBwjBSVf_jbJie1sn5sxC0XMxLin1JEd1UwOXBulTxisATWVkgOKmdIc4CN9oYUMGc-goZhOA0OmFP6B_tfbqqek7YFS3TZ6iGwpIa4';
 const BASE_URL = 'api.minimaxi.com';
-const MODEL = 'MiniMax-M2.7';
+const MODEL = 'MiniMax-M2';
 
 const SYSTEM_PROMPT = `你是一名温柔治愈、共情力很强的情绪陪伴助手。
-用户会输入一段日常便签文字，你需要完成下面三件事：
 
+用户会输入一段日常便签文字，你需要完成下面两件事：
 1. 精准识别用户当前情绪，只能从五种里面选：开心、兴奋、平静、不开心、焦虑
-2. 根据识别出的情绪，生成一段简短、温暖、治愈、口语化的回复，不要太长，不要鸡汤说教，语气温柔亲切
-3. 额外输出情绪标签，方便前端切换对应背景色
+2. 根据识别出的情绪，生成一句简短、温暖、治愈、口语化的回复，大约50字，语气温柔亲切，不要鸡汤说教
 
-输出格式严格按照JSON，不要多余解释、不要 Markdown：
-{"mood":"情绪标签","reply":"你的治愈回复"}`;
+重要：你绝对不能输出任何<think>标签或任何类似思考过程的标记。你只能输出一个纯粹的JSON对象，不能有其他任何内容。
+只输出这一行：{"mood":"情绪标签","reply":"你的治愈回复"}`;
 
 function streamLLMReply(userNote, onMood, onChunk, onDone) {
   const postData = JSON.stringify({
@@ -31,18 +31,24 @@ function streamLLMReply(userNote, onMood, onChunk, onDone) {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'Authorization': `Bearer ${API_KEY}`,
+      Authorization: `Bearer ${API_KEY}`,
       'Content-Length': Buffer.byteLength(postData),
     },
   };
 
-  const req = https.request(options, (res) => {
+  const req = https.request(options, res => {
     let buffer = '';
+    let done = false;
 
-    res.on('data', (chunk) => {
+    const finish = () => {
+      if (done) return;
+      done = true;
+      onDone();
+    };
+
+    res.on('data', chunk => {
       buffer += chunk.toString();
 
-      // Split by newlines and process SSE format
       const lines = buffer.split('\n');
       buffer = lines.pop() || '';
 
@@ -50,7 +56,7 @@ function streamLLMReply(userNote, onMood, onChunk, onDone) {
         if (!line.startsWith('data: ')) continue;
         const data = line.slice(6).trim();
         if (data === '[DONE]') {
-          onDone();
+          finish();
           return;
         }
 
@@ -66,12 +72,10 @@ function streamLLMReply(userNote, onMood, onChunk, onDone) {
       }
     });
 
-    res.on('end', () => {
-      onDone();
-    });
+    res.on('end', finish);
   });
 
-  req.on('error', (e) => {
+  req.on('error', e => {
     console.error('LLM request error:', e);
     onDone();
   });
@@ -97,30 +101,22 @@ function callLLM(userNote) {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${API_KEY}`,
+        Authorization: `Bearer ${API_KEY}`,
         'Content-Length': Buffer.byteLength(postData),
       },
     };
 
-    const req = https.request(options, (res) => {
+    const req = https.request(options, res => {
       let data = '';
 
-      res.on('data', (chunk) => {
+      res.on('data', chunk => {
         data += chunk.toString();
       });
 
       res.on('end', () => {
         try {
           const json = JSON.parse(data);
-          let content = json.choices?.[0]?.message?.content || '';
-          // Extract JSON - non-greedy match after the think tag (if present)
-          const thinkEnd = content.lastIndexOf('</think>');
-          const searchFrom = thinkEnd !== -1 ? thinkEnd + 6 : 0;
-          const afterThink = content.slice(searchFrom);
-          const jsonMatch = afterThink.match(/\{[\s\S]*?\}/);
-          if (jsonMatch) {
-            content = jsonMatch[0];
-          }
+          const content = json.choices?.[0]?.message?.content || '';
           resolve(content);
         } catch (e) {
           reject(e);

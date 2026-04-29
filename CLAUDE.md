@@ -8,17 +8,17 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## 技术栈
 
-| 层级 | 技术 |
-|------|------|
-| 框架 | Next.js 14 (App Router) |
-| 语言 | TypeScript（strict 模式） |
-| UI 组件库 | shadcn/ui (new-york style) |
-| 样式 | Tailwind CSS + CSS Variables |
-| 动画 | CSS Keyframes (globals.css) |
-| 后端 | Express (Node.js) |
-| 持久化 | JSON 文件存储 |
-| LLM | MiniMax API (MiniMax-M2 模型, SSE 流式输出) |
-| 代码规范 | Airbnb React/TypeScript + ESLint + Prettier |
+| 层级      | 技术                                        |
+| --------- | ------------------------------------------- |
+| 框架      | Next.js 14 (App Router)                     |
+| 语言      | TypeScript（strict 模式）                   |
+| UI 组件库 | shadcn/ui (new-york style)                  |
+| 样式      | Tailwind CSS + CSS Variables                |
+| 动画      | CSS Keyframes (globals.css)                 |
+| 后端      | Express (Node.js)                           |
+| 持久化    | JSON 文件存储                               |
+| LLM       | MiniMax API (MiniMax-M2 模型, SSE 流式输出) |
+| 代码规范  | Airbnb React/TypeScript + ESLint + Prettier |
 
 ## 常用命令
 
@@ -72,16 +72,19 @@ backend/
 ## 代码规范
 
 ### TypeScript 要求
+
 - **严格模式**：所有类型必须显式声明，禁止使用 `any`（`@typescript-eslint/no-explicit-any` 为 warn）
 - **类型导入**：使用 `import type` 语法（`@typescript-eslint/consistent-type-imports` 规则）
 - **类型定义文件**：`src/types/` 目录下集中管理
 
 ### 组件规范
+
 - **shadcn/ui 组件**：只读 `src/components/ui/`，禁止修改源码
 - **业务组件**：放置于 `src/components/` 根目录或子目录（如 `src/components/notes/`）
 - **样式规范**：所有样式通过 Tailwind 类名实现，不修改 shadcn/ui 组件源码
 
 ### ESLint 规则（重点）
+
 ```json
 "prettier/prettier": "error",          // Prettier 冲突直接报错
 "react-hooks/rules-of-hooks": "error", // Hooks 规则强制
@@ -92,48 +95,49 @@ backend/
 ```
 
 ### 路径别名
+
 - `@/*` → `src/*`（已在 `tsconfig.json` 配置）
 
 ## UI 配色方案
 
 ### 情绪渐变配色
-| 情绪 | 渐变（Tailwind） | 背景色 |
-|------|------------------|--------|
-| 平静 calm | `from-purple-400 via-purple-200 to-pink-200` | `#a855f7` → `#c084fc` → `#f9a8d4` |
-| 开心 happy | `from-blue-100 via-white to-green-100` | `#dbeafe` → `#ffffff` → `#bbf7d0` |
-| 不开心 unhappy | `from-gray-300 via-gray-200 to-gray-100` | `#cdd6e0` → `#bcc8d8` |
-| 焦虑 anxious | `from-gray-400 via-gray-300 to-gray-200` | `#d9d2e2` → `#c9c1d6` |
-| 兴奋 excited | `from-orange-100 via-pink-100 to-pink-200` | `#f9d8b8` → `#f8c8d0` |
+
+| 情绪           | 渐变（Tailwind）                             | 背景色                            |
+| -------------- | -------------------------------------------- | --------------------------------- |
+| 平静 calm      | `from-purple-400 via-purple-200 to-pink-200` | `#a855f7` → `#c084fc` → `#f9a8d4` |
+| 开心 happy     | `from-blue-100 via-white to-green-100`       | `#dbeafe` → `#ffffff` → `#bbf7d0` |
+| 不开心 unhappy | `from-gray-300 via-gray-200 to-gray-100`     | `#cdd6e0` → `#bcc8d8`             |
+| 焦虑 anxious   | `from-gray-400 via-gray-300 to-gray-200`     | `#d9d2e2` → `#c9c1d6`             |
+| 兴奋 excited   | `from-orange-100 via-pink-100 to-pink-200`   | `#f9d8b8` → `#f8c8d0`             |
 
 ### shadcn/ui CSS 变量（globals.css）
+
 ```css
---primary: 262.1 83.2% 57.3%     /* 紫色 — 主色调 */
---psyche-purple: 262.1 83.2% 57.3%
---psyche-pink: 340 75% 70%
---psyche-mint: 122 39% 50%
---psyche-yellow: 55 100% 88%
---psyche-blue: 210 100% 94%
---psyche-green: 122 50% 90%
---psyche-peach: 340 80% 90%
+--primary: 262.1 83.2% 57.3% /* 紫色 — 主色调 */ --psyche-purple: 262.1 83.2% 57.3%
+  --psyche-pink: 340 75% 70% --psyche-mint: 122 39% 50% --psyche-yellow: 55 100% 88%
+  --psyche-blue: 210 100% 94% --psyche-green: 122 50% 90% --psyche-peach: 340 80% 90%;
 ```
 
 ### 动画粒子
-| 情绪 | 粒子效果 |
-|------|---------|
-| calm | 白色圆点闪烁 (`calm-dot`) |
-| happy | 云朵摇摆 + 右上角太阳脉动 (`happy-cloud`, `happy-sun`) |
-| excited | 火焰摇摆 (`excited-flame`) |
-| unhappy | 乌云摇摆 (`unhappy-cloud`) |
-| anxious | 标语文字摇摆 (`anxious-phrase`) |
+
+| 情绪    | 粒子效果                                               |
+| ------- | ------------------------------------------------------ |
+| calm    | 白色圆点闪烁 (`calm-dot`)                              |
+| happy   | 云朵摇摆 + 右上角太阳脉动 (`happy-cloud`, `happy-sun`) |
+| excited | 火焰摇摆 (`excited-flame`)                             |
+| unhappy | 乌云摇摆 (`unhappy-cloud`)                             |
+| anxious | 标语文字摇摆 (`anxious-phrase`)                        |
 
 ## 后端 LLM 规则
 
 ### API 端点
+
 - `POST /api/note` — 接收便签内容，返回 SSE 流式响应
   - Event `mood`：推送情绪标签（`{ "mood": "calm" }`）
   - Event `reply`：推送回复文本片段（`{ "text": "..." }`）
 
 ### LLM 系统提示词（backend/services/llm.js）
+
 ```
 你是一名温柔治愈、共情力很强的情绪陪伴助手。
 用户会输入一段日常便签文字，你需要完成下面三件事：
@@ -146,6 +150,7 @@ backend/
 ```
 
 ### LLM 输出规范
+
 - 仅支持 `开心`、`兴奋`、`平静`、`不开心`、`焦虑` 五种情绪标签
 - 回复须为 JSON 格式，严格包含 `mood` 和 `reply` 字段
 - reply 内容：简短（50字以内）、口语化、温暖治愈、不说教

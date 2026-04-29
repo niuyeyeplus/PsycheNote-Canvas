@@ -24,3 +24,14 @@ export const MOOD_CONFIG: Record<Mood, MoodConfig> = {
 };
 
 export const DEFAULT_MOOD: Mood = 'calm';
+
+// LLM返回的中文情绪 -> Mood key 映射
+export const CHINESE_MOOD_MAP: Record<string, Mood> = {
+  平静: 'calm',
+  开心: 'happy',
+  不高兴: 'unhappy',
+  不开心: 'unhappy',
+  难过: 'unhappy',
+  焦虑: 'anxious',
+  兴奋: 'excited',
+};
