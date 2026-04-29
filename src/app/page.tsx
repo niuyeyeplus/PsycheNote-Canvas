@@ -6,20 +6,23 @@ import CatCompanion from '@/components/CatCompanion';
 import FloatingDecorations from '@/components/FloatingDecorations';
 import LLMReplyBubble from '@/components/LLMReplyBubble';
 import MoodBackground from '@/components/MoodBackground';
-import { MOOD_CONFIG, CHINESE_MOOD_MAP } from '@/config/moodConfig';
+import HistoryModal from '@/components/notes/HistoryModal';
+import NoteGrid from '@/components/notes/NoteGrid';
+import { CHINESE_MOOD_MAP } from '@/config/moodConfig';
 import { useMood } from '@/hooks/useMood';
+import { useNotes } from '@/hooks/useNotes';
 import type { Mood } from '@/types/mood';
-
-const MOODS: Mood[] = ['calm', 'happy', 'unhappy', 'anxious', 'excited'];
 
 const MoodTestPage = () => {
   const { currentMood, setMood } = useMood();
+  const { notes, addNote, deleteNote } = useNotes();
   const [showBubble, setShowBubble] = useState(false);
   const [replyText, setReplyText] = useState('');
   const [llmMood, setLlmMood] = useState<Mood | null>(null);
   const [isStreaming, setIsStreaming] = useState(false);
   const [noteInput, setNoteInput] = useState('');
   const [isInputVisible, setIsInputVisible] = useState(false);
+  const [isHistoryVisible, setIsHistoryVisible] = useState(false);
   const abortControllerRef = useRef<AbortController | null>(null);
 
   const handleSendNote = useCallback(async () => {
@@ -37,11 +40,13 @@ const MoodTestPage = () => {
     setIsStreaming(true);
     setIsInputVisible(false);
 
+    const content = noteInput;
+
     try {
       const response = await fetch('http://localhost:3001/api/note', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ content: noteInput }),
+        body: JSON.stringify({ content }),
         signal: abortControllerRef.current.signal,
       });
 
@@ -95,8 +100,12 @@ const MoodTestPage = () => {
       }
     } finally {
       setIsStreaming(false);
+      // 保存便签
+      if (llmMood) {
+        addNote(content, llmMood);
+      }
     }
-  }, [noteInput, isStreaming, setMood]);
+  }, [noteInput, isStreaming, setMood, llmMood, addNote]);
 
   const handleCloseBubble = useCallback(() => {
     setShowBubble(false);
@@ -167,6 +176,14 @@ const MoodTestPage = () => {
         </div>
       )}
 
+      {isHistoryVisible && (
+        <HistoryModal
+          notes={notes}
+          onClose={() => setIsHistoryVisible(false)}
+          onDeleteNote={deleteNote}
+        />
+      )}
+
       <button
         type="button"
         onClick={handleCreateNote}
@@ -186,28 +203,11 @@ const MoodTestPage = () => {
         </div>
         <p className="text-gray-600 font-medium">你的情绪气象站 · 记录每一刻的心情</p>
 
-        <div className="mt-12 flex flex-wrap gap-3 justify-center max-w-lg">
-          {MOODS.map(m => (
-            <button
-              type="button"
-              key={m}
-              onClick={() => setMood(m)}
-              className={`px-5 py-2 rounded-full text-sm font-semibold transition-all duration-300 ${
-                currentMood === m
-                  ? 'bg-white/80 shadow-lg scale-105 text-purple-600'
-                  : 'bg-white/40 text-gray-600 hover:bg-white/60'
-              }`}
-            >
-              {MOOD_CONFIG[m].label}
-            </button>
-          ))}
-        </div>
-
-        <div className="mt-8 text-center">
-          <p className="text-lg font-semibold text-gray-700">
-            当前心情：{currentMood ? MOOD_CONFIG[currentMood].label : '加载中'}
-          </p>
-        </div>
+        <NoteGrid
+          notes={notes}
+          onViewHistory={() => setIsHistoryVisible(true)}
+          onDeleteNote={deleteNote}
+        />
       </div>
     </MoodBackground>
   );
