@@ -25,14 +25,12 @@ if not exist "backend\.env" (
     echo [INFO] First time setup - API Key required
     echo Please register at https://platform.minimaxi.com/
     echo.
-    set /p API_KEY=Enter your API Key:
-    if "%API_KEY%"=="" (
-        echo [ERROR] API Key cannot be empty!
+    powershell -Command "$apiKey = Read-Host -Prompt 'Enter your API Key'; if ($apiKey) { Set-Content -Path 'backend\.env' -Value \"MINIMAX_API_KEY=$apiKey\" -Encoding UTF8; Write-Host '[OK] API Key saved' } else { Write-Host '[ERROR] API Key cannot be empty!'; exit 1 }"
+    if errorlevel 1 (
+        echo.
         pause
         exit /b 1
     )
-    echo MINIMAX_API_KEY=%API_KEY% > "backend\.env"
-    echo [OK] API Key saved to backend\.env
 ) else (
     echo [OK] API Key already configured
 )
