@@ -7,20 +7,23 @@ interface NoteGridProps {
   onViewHistory: () => void;
   // eslint-disable-next-line react/require-default-props
   onDeleteNote?: (id: string) => void;
+  // eslint-disable-next-line react/require-default-props
+  onEditNote?: (note: Note) => void;
 }
 
 const VISIBLE_COUNT = 6; // 3列 × 2行
 
-const NoteGrid = ({ notes, onViewHistory, onDeleteNote }: NoteGridProps) => {
-  const visibleNotes = notes.slice(0, VISIBLE_COUNT);
+const NoteGrid = ({ notes, onViewHistory, onDeleteNote, onEditNote }: NoteGridProps) => {
+  // 显示最新的6条（倒序，最新的在左边）
+  const visibleNotes = [...notes].reverse().slice(0, VISIBLE_COUNT);
   const hasHistory = notes.length > VISIBLE_COUNT;
 
   return (
-    <div className="w-full max-w-2xl mx-auto mt-6">
+    <div className="w-full max-w-4xl mx-auto mt-6">
       {visibleNotes.length > 0 ? (
-        <div className="grid grid-cols-3 gap-3">
+        <div className="grid grid-cols-3 gap-4">
           {visibleNotes.map(note => (
-            <NoteCard key={note.id} note={note} onDelete={onDeleteNote} />
+            <NoteCard key={note.id} note={note} onDelete={onDeleteNote} onEdit={onEditNote} />
           ))}
         </div>
       ) : (

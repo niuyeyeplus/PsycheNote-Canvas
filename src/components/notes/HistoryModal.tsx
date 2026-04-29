@@ -9,6 +9,8 @@ interface HistoryModalProps {
   onClose: () => void;
   // eslint-disable-next-line react/require-default-props
   onDeleteNote?: (id: string) => void;
+  // eslint-disable-next-line react/require-default-props
+  onEditNote?: (note: Note) => void;
 }
 
 interface WeekGroup {
@@ -35,7 +37,7 @@ const formatWeekLabel = (weekStart: Date): string => {
   return `${year}年${month}月第${weekNum}周`;
 };
 
-const HistoryModal = ({ notes, onClose, onDeleteNote }: HistoryModalProps) => {
+const HistoryModal = ({ notes, onClose, onDeleteNote, onEditNote }: HistoryModalProps) => {
   const weekGroups = useMemo<WeekGroup[]>(() => {
     const groups: Map<string, WeekGroup> = new Map();
 
@@ -92,7 +94,7 @@ const HistoryModal = ({ notes, onClose, onDeleteNote }: HistoryModalProps) => {
               <p className="text-sm text-gray-400 mb-3">{currentGroup.label}</p>
               <div className="grid grid-cols-3 gap-3">
                 {currentGroup.notes.map(note => (
-                  <NoteCard key={note.id} note={note} onDelete={onDeleteNote} />
+                  <NoteCard key={note.id} note={note} onDelete={onDeleteNote} onEdit={onEditNote} />
                 ))}
               </div>
             </div>

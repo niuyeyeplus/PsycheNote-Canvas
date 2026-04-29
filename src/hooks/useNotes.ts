@@ -50,5 +50,13 @@ export const useNotes = () => {
     });
   }, []);
 
-  return { notes, addNote, deleteNote };
+  const updateNote = useCallback((id: string, content: string) => {
+    setNotes(prev => {
+      const updated = prev.map(n => (n.id === id ? { ...n, content } : n));
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
+      return updated;
+    });
+  }, []);
+
+  return { notes, addNote, deleteNote, updateNote };
 };

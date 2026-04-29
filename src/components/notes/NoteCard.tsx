@@ -9,6 +9,8 @@ interface NoteCardProps {
   note: Note;
   // eslint-disable-next-line react/require-default-props
   onDelete?: (id: string) => void;
+  // eslint-disable-next-line react/require-default-props
+  onEdit?: (note: Note) => void;
 }
 
 const MOOD_EMOJI: Record<string, string> = {
@@ -19,21 +21,34 @@ const MOOD_EMOJI: Record<string, string> = {
   excited: '🤩',
 };
 
-const NoteCard = ({ note, onDelete }: NoteCardProps) => {
+const NoteCard = ({ note, onDelete, onEdit }: NoteCardProps) => {
   const config = MOOD_CONFIG[note.mood];
   const emoji = MOOD_EMOJI[note.mood] || '😌';
 
-  const handleDelete = useCallback(() => {
-    if (onDelete) {
-      onDelete(note.id);
+  const handleDelete = useCallback(
+    (e: React.MouseEvent) => {
+      e.stopPropagation();
+      if (onDelete) {
+        onDelete(note.id);
+      }
+    },
+    [note.id, onDelete]
+  );
+
+  const handleCardClick = useCallback(() => {
+    if (onEdit) {
+      onEdit(note);
     }
-  }, [note.id, onDelete]);
+  }, [note, onEdit]);
 
   return (
-    <div className="relative bg-white/90 backdrop-blur-sm rounded-2xl p-4 shadow-md border border-white/50 transition-all duration-300 hover:shadow-lg hover:scale-[1.02] cursor-pointer group">
+    <div
+      className="relative bg-white/90 backdrop-blur-sm rounded-2xl p-5 shadow-md border border-white/50 transition-all duration-300 hover:shadow-lg hover:scale-[1.02] cursor-pointer group"
+      onClick={handleCardClick}
+    >
       {/* 情绪标签 */}
       <div className="flex items-center gap-1 mb-2">
-        <span className="text-sm">{emoji}</span>
+        <span className="text-base">{emoji}</span>
         <span
           className="text-xs font-medium px-2 py-0.5 rounded-full text-white"
           style={{ background: 'linear-gradient(135deg, #9333ea 0%, #a855f7 100%)' }}
@@ -43,10 +58,10 @@ const NoteCard = ({ note, onDelete }: NoteCardProps) => {
       </div>
 
       {/* 内容 */}
-      <p className="text-gray-700 text-sm leading-relaxed line-clamp-3">{note.content}</p>
+      <p className="text-gray-700 text-base leading-relaxed line-clamp-4">{note.content}</p>
 
       {/* 日期 */}
-      <p className="text-gray-400 text-xs mt-2">
+      <p className="text-gray-400 text-xs mt-3">
         {new Date(note.createdAt).toLocaleDateString('zh-CN', {
           month: 'short',
           day: 'numeric',

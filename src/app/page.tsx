@@ -12,10 +12,11 @@ import { CHINESE_MOOD_MAP } from '@/config/moodConfig';
 import { useMood } from '@/hooks/useMood';
 import { useNotes } from '@/hooks/useNotes';
 import type { Mood } from '@/types/mood';
+import type { Note } from '@/types/note';
 
 const MoodTestPage = () => {
   const { currentMood, setMood } = useMood();
-  const { notes, addNote, deleteNote } = useNotes();
+  const { notes, addNote, deleteNote, updateNote } = useNotes();
   const [showBubble, setShowBubble] = useState(false);
   const [replyText, setReplyText] = useState('');
   const [llmMood, setLlmMood] = useState<Mood | null>(null);
@@ -23,6 +24,8 @@ const MoodTestPage = () => {
   const [noteInput, setNoteInput] = useState('');
   const [isInputVisible, setIsInputVisible] = useState(false);
   const [isHistoryVisible, setIsHistoryVisible] = useState(false);
+  const [editingNote, setEditingNote] = useState<Note | null>(null);
+  const [editInput, setEditInput] = useState('');
   const abortControllerRef = useRef<AbortController | null>(null);
 
   const handleSendNote = useCallback(async () => {
@@ -41,6 +44,7 @@ const MoodTestPage = () => {
     setIsInputVisible(false);
 
     const content = noteInput;
+    let detectedMood: Mood | null = null;
 
     try {
       const response = await fetch('http://localhost:3001/api/note', {
@@ -78,6 +82,7 @@ const MoodTestPage = () => {
                 if (json.mood) {
                   const moodKey = CHINESE_MOOD_MAP[json.mood as string];
                   if (moodKey) {
+                    detectedMood = moodKey;
                     setLlmMood(moodKey);
                     setMood(moodKey);
                   }
@@ -100,12 +105,11 @@ const MoodTestPage = () => {
       }
     } finally {
       setIsStreaming(false);
-      // 保存便签
-      if (llmMood) {
-        addNote(content, llmMood);
+      if (detectedMood) {
+        addNote(content, detectedMood);
       }
     }
-  }, [noteInput, isStreaming, setMood, llmMood, addNote]);
+  }, [noteInput, isStreaming, setMood, addNote]);
 
   const handleCloseBubble = useCallback(() => {
     setShowBubble(false);
@@ -115,6 +119,20 @@ const MoodTestPage = () => {
 
   const handleCreateNote = () => {
     setIsInputVisible(true);
+    setNoteInput('');
+  };
+
+  const handleEditNote = (note: Note) => {
+    setEditingNote(note);
+    setEditInput(note.content);
+  };
+
+  const handleSaveEdit = () => {
+    if (editingNote && editInput.trim()) {
+      updateNote(editingNote.id, editInput.trim());
+      setEditingNote(null);
+      setEditInput('');
+    }
   };
 
   return (
@@ -176,11 +194,60 @@ const MoodTestPage = () => {
         </div>
       )}
 
+      {editingNote && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 backdrop-blur-sm">
+          <div
+            className="bg-white/95 rounded-3xl px-6 py-5 shadow-2xl border-2 border-white/50"
+            style={{
+              minWidth: '360px',
+              maxWidth: '480px',
+              background:
+                'linear-gradient(135deg, rgba(255,255,255,0.98) 0%, rgba(248,240,252,0.95) 100%)',
+            }}
+          >
+            <h3
+              className="text-lg font-bold text-purple-600 mb-4 text-center"
+              style={{ fontFamily: "'Nunito', sans-serif" }}
+            >
+              编辑便签
+            </h3>
+            <textarea
+              value={editInput}
+              onChange={e => setEditInput(e.target.value)}
+              placeholder="写下你的心情..."
+              className="w-full px-4 py-3 rounded-2xl border-2 border-purple-200 focus:border-purple-400 focus:outline-none text-gray-700 resize-none"
+              style={{
+                fontFamily: "'Nunito', sans-serif",
+                minHeight: '120px',
+              }}
+            />
+            <div className="flex gap-3 mt-4 justify-end">
+              <button
+                type="button"
+                onClick={() => setEditingNote(null)}
+                className="px-4 py-2 rounded-xl text-gray-500 hover:bg-gray-100 transition-colors font-medium"
+              >
+                取消
+              </button>
+              <button
+                type="button"
+                onClick={handleSaveEdit}
+                disabled={!editInput.trim()}
+                className="px-6 py-2 rounded-xl bg-purple-500 hover:bg-purple-600 text-white font-bold shadow-md transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                保存
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {isHistoryVisible && (
         <HistoryModal
           notes={notes}
           onClose={() => setIsHistoryVisible(false)}
           onDeleteNote={deleteNote}
+          onEditNote={handleEditNote}
         />
       )}
 
@@ -207,6 +274,7 @@ const MoodTestPage = () => {
           notes={notes}
           onViewHistory={() => setIsHistoryVisible(true)}
           onDeleteNote={deleteNote}
+          onEditNote={handleEditNote}
         />
       </div>
     </MoodBackground>
