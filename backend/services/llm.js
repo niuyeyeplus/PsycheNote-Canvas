@@ -44,11 +44,6 @@ const getApiError = json => {
     return typeof json.error === 'string' ? json.error : JSON.stringify(json.error);
   }
 
-  if (json?.base_resp && typeof json.base_resp === 'object') {
-    const { status_msg: statusMessage } = json.base_resp;
-    if (statusMessage) return statusMessage;
-  }
-
   return null;
 };
 
@@ -154,8 +149,10 @@ function streamLLMReply(userNote, onMood, onChunk, onDone, onError) {
             }
           } catch (error) {
             console.error('无法解析完整的 MiniMax SSE 数据帧:', getSnippet(data));
-            fail(new Error('MiniMax 返回的数据格式异常，请稍后重试'));
-            return;
+            if (!hasContent) {
+              fail(new Error('MiniMax 返回的数据格式异常，请稍后重试'));
+              return;
+            }
           }
         }
       });

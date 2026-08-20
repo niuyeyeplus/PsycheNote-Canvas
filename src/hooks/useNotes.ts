@@ -57,8 +57,12 @@ const generateId = () => `${Date.now()}-${Math.random().toString(36).slice(2, 9)
  */
 export const useNotes = () => {
   const [notes, setNotes] = useState<Note[]>([]);
-  const [isHydrated, setIsHydrated] = useState(false);
   const [storageError, setStorageError] = useState<string | null>(null);
+
+  const persistNotes = useCallback((nextNotes: Note[]) => {
+    const succeeded = writeStorage(STORAGE_KEY, JSON.stringify(nextNotes));
+    setStorageError(succeeded ? null : '便签保存失败，可能是浏览器存储空间不足。');
+  }, []);
 
   // 初始化：从 localStorage 恢复数据
   useEffect(() => {
@@ -83,14 +87,7 @@ export const useNotes = () => {
       }
     });
     if (storedNotes) setNotes(storedNotes);
-    setIsHydrated(true);
   }, []);
-
-  useEffect(() => {
-    if (!isHydrated) return;
-    const succeeded = writeStorage(STORAGE_KEY, JSON.stringify(notes));
-    setStorageError(succeeded ? null : '便签保存失败，可能是浏览器存储空间不足。');
-  }, [isHydrated, notes]);
 
   /**
    * 添加新便签
@@ -103,20 +100,25 @@ export const useNotes = () => {
    * @param content - 便签内容
    * @param mood - 情绪类型
    */
-  const addNote = useCallback((content: string, mood: Mood) => {
-    const newNote: Note = {
-      id: generateId(),
-      content,
-      mood,
-      createdAt: new Date().toISOString(),
-    };
+  const addNote = useCallback(
+    (content: string, mood: Mood) => {
+      const newNote: Note = {
+        id: generateId(),
+        content,
+        mood,
+        createdAt: new Date().toISOString(),
+      };
 
-    setNotes(prev =>
-      [...prev, newNote].sort(
-        (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
-      )
-    );
-  }, []);
+      setNotes(prev => {
+        const nextNotes = [...prev, newNote].sort(
+          (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+        );
+        persistNotes(nextNotes);
+        return nextNotes;
+      });
+    },
+    [persistNotes]
+  );
 
   /**
    * 删除便签
@@ -124,9 +126,17 @@ export const useNotes = () => {
    * @param id - 要删除的便签 ID
    * @note 如果 ID 不存在，filter 会忽略，不会报错
    */
-  const deleteNote = useCallback((id: string) => {
-    setNotes(prev => prev.filter(n => n.id !== id));
-  }, []);
+  const deleteNote = useCallback(
+    (id: string) => {
+      setNotes(prev => {
+        const nextNotes = prev.filter(n => n.id !== id);
+        if (nextNotes.length === prev.length) return prev;
+        persistNotes(nextNotes);
+        return nextNotes;
+      });
+    },
+    [persistNotes]
+  );
 
   /**
    * 更新便签内容
@@ -138,9 +148,22 @@ export const useNotes = () => {
    * @param id - 要更新的便签 ID
    * @param content - 新的便签内容
    */
-  const updateNote = useCallback((id: string, content: string) => {
-    setNotes(prev => prev.map(n => (n.id === id ? { ...n, content } : n)));
-  }, []);
+  const updateNote = useCallback(
+    (id: string, content: string) => {
+      setNotes(prev => {
+        let didUpdate = false;
+        const nextNotes = prev.map(note => {
+          if (note.id !== id || note.content === content) return note;
+          didUpdate = true;
+          return { ...note, content };
+        });
+        if (!didUpdate) return prev;
+        persistNotes(nextNotes);
+        return nextNotes;
+      });
+    },
+    [persistNotes]
+  );
 
   return { notes, addNote, deleteNote, storageError, updateNote };
 };

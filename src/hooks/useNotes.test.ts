@@ -62,6 +62,14 @@ describe('useNotes', () => {
       expect(result.current.notes).toEqual([]);
     });
 
+    it('不应该在损坏的 localStorage 数据恢复时覆盖原始值', () => {
+      localStorageGetSpy.mockReturnValue('invalid-json{');
+
+      renderHook(() => useNotes());
+
+      expect(localStorageSetSpy).not.toHaveBeenCalled();
+    });
+
     it('应该保留有效记录并丢弃无效记录', () => {
       localStorageGetSpy.mockReturnValue(
         JSON.stringify([

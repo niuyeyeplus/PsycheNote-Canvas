@@ -15,7 +15,7 @@ import type { Mood } from '@/types/mood';
 import type { Note } from '@/types/note';
 
 const MoodTestPage = () => {
-  const { currentMood, setMood } = useMood();
+  const { currentMood, setMood, storageError: moodStorageError } = useMood();
   const { notes, addNote, deleteNote, storageError, updateNote } = useNotes();
   const [showBubble, setShowBubble] = useState(false);
   const [replyText, setReplyText] = useState('');
@@ -109,9 +109,11 @@ const MoodTestPage = () => {
                 }
               } catch (error) {
                 console.error('解析回复数据失败:', error);
-                streamError = '回复数据格式异常，请稍后再试。';
-                setLlmError(streamError);
-                break;
+                if (!receivedText) {
+                  streamError = '回复数据格式异常，请稍后再试。';
+                  setLlmError(streamError);
+                  break;
+                }
               }
             }
           }
@@ -161,6 +163,8 @@ const MoodTestPage = () => {
       setEditInput('');
     }
   };
+
+  const storageNotice = storageError || moodStorageError;
 
   return (
     <MoodBackground mood={currentMood}>
@@ -297,9 +301,9 @@ const MoodTestPage = () => {
           </h1>
         </div>
         <p className="text-gray-600 font-medium">你的情绪气象站 · 记录每一刻的心情</p>
-        {storageError && (
+        {storageNotice && (
           <p className="mt-2 rounded-full bg-amber-100/80 px-4 py-1 text-sm text-amber-700 shadow-sm">
-            {storageError}
+            {storageNotice}
           </p>
         )}
 

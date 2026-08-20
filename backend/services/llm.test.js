@@ -107,6 +107,26 @@ describe('llm service', () => {
     });
   });
 
+  it('continues after a malformed frame once content has been streamed', done => {
+    const response = createResponse(200);
+    createRequest(response);
+    const onChunk = jest.fn();
+    const onDone = jest.fn();
+    const onError = jest.fn();
+
+    streamLLMReply('test', jest.fn(), onChunk, onDone, onError);
+
+    process.nextTick(() => {
+      response.emit('data', 'data: {"choices":[{"delta":{"content":"Hello"}}]}\n\n');
+      response.emit('data', 'data: malformed\n\n');
+      response.emit('data', 'data: [DONE]\n\n');
+      expect(onChunk).toHaveBeenCalledWith('Hello');
+      expect(onDone).toHaveBeenCalledTimes(1);
+      expect(onError).not.toHaveBeenCalled();
+      done();
+    });
+  });
+
   it('rejects callLLM responses with empty content', async () => {
     const response = createResponse(200);
     createRequest(response);
