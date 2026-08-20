@@ -5,13 +5,14 @@ import { useEffect, useState, useRef } from 'react';
 import type { Mood } from '@/types/mood';
 
 interface LLMReplyBubbleProps {
+  error: string | null;
   replyText: string;
   mood: Mood | null;
   isVisible: boolean;
   onClose: () => void;
 }
 
-const LLMReplyBubble = ({ replyText, mood, isVisible, onClose }: LLMReplyBubbleProps) => {
+const LLMReplyBubble = ({ error, replyText, mood, isVisible, onClose }: LLMReplyBubbleProps) => {
   const [displayText, setDisplayText] = useState('');
   const [isAnimating, setIsAnimating] = useState(false);
   const prevTextRef = useRef('');
@@ -41,7 +42,7 @@ const LLMReplyBubble = ({ replyText, mood, isVisible, onClose }: LLMReplyBubbleP
     }
   }, [replyText, isVisible]);
 
-  if (!isVisible && !displayText) return null;
+  if (!isVisible && !displayText && !error) return null;
 
   return (
     <div
@@ -80,7 +81,7 @@ const LLMReplyBubble = ({ replyText, mood, isVisible, onClose }: LLMReplyBubbleP
         </button>
 
         {/* 情绪标签 */}
-        {mood && (
+        {mood && !error && (
           <div className="absolute -top-3 left-4">
             <span
               className="px-3 py-1 rounded-full text-xs font-bold text-white shadow-md"
@@ -100,7 +101,7 @@ const LLMReplyBubble = ({ replyText, mood, isVisible, onClose }: LLMReplyBubbleP
 
         {/* 回复文本 */}
         <p
-          className="text-gray-700 leading-relaxed pr-4"
+          className={`leading-relaxed pr-4 ${error ? 'text-amber-700' : 'text-gray-700'}`}
           style={{
             fontFamily: "'Nunito', 'Comic Sans MS', cursive, sans-serif",
             fontSize: '15px',
@@ -108,8 +109,8 @@ const LLMReplyBubble = ({ replyText, mood, isVisible, onClose }: LLMReplyBubbleP
             textShadow: '0 1px 1px rgba(255,255,255,0.8)',
           }}
         >
-          {displayText || '...'}
-          {replyText === displayText && replyText.length > 0 && (
+          {error || displayText || '...'}
+          {!error && replyText === displayText && replyText.length > 0 && (
             <span className="inline-block animate-pulse ml-1">✿</span>
           )}
         </p>

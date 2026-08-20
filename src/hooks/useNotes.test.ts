@@ -1,4 +1,4 @@
-import { renderHook, act } from '@testing-library/react';
+import { act, renderHook, waitFor } from '@testing-library/react';
 
 import { useNotes } from '@/hooks/useNotes';
 import type { Mood } from '@/types/mood';
@@ -33,6 +33,18 @@ describe('useNotes', () => {
       expect(result.current.notes).toHaveLength(2);
     });
 
+    it('仅恢复数据时不应该写入 localStorage', () => {
+      localStorageGetSpy.mockReturnValue(
+        JSON.stringify([
+          { id: '1', content: 'test', mood: 'happy', createdAt: '2026-04-29T10:00:00.000Z' },
+        ])
+      );
+
+      renderHook(() => useNotes());
+
+      expect(localStorageSetSpy).not.toHaveBeenCalled();
+    });
+
     it('应该按 createdAt 升序排列', () => {
       const storedNotes = [
         { id: '2', content: 'later', mood: 'happy', createdAt: '2026-04-29T12:00:00.000Z' },
@@ -60,6 +72,28 @@ describe('useNotes', () => {
       const { result } = renderHook(() => useNotes());
 
       expect(result.current.notes).toEqual([]);
+    });
+
+    it('不应该在损坏的 localStorage 数据恢复时覆盖原始值', () => {
+      localStorageGetSpy.mockReturnValue('invalid-json{');
+
+      renderHook(() => useNotes());
+
+      expect(localStorageSetSpy).not.toHaveBeenCalled();
+    });
+
+    it('应该保留有效记录并丢弃无效记录', () => {
+      localStorageGetSpy.mockReturnValue(
+        JSON.stringify([
+          { id: 'valid', content: '保留', mood: 'happy', createdAt: '2026-04-29T10:00:00.000Z' },
+          { id: 'invalid', content: 42, mood: 'calm', createdAt: '2026-04-29T11:00:00.000Z' },
+        ])
+      );
+
+      const { result } = renderHook(() => useNotes());
+
+      expect(result.current.notes).toHaveLength(1);
+      expect(result.current.notes[0].id).toBe('valid');
     });
   });
 
@@ -100,6 +134,7 @@ describe('useNotes', () => {
         result.current.addNote('test', 'excited');
       });
 
+      expect(localStorageSetSpy).toHaveBeenCalledTimes(1);
       expect(localStorageSetSpy).toHaveBeenCalledWith(
         'psychenote-notes',
         expect.stringContaining('test')
@@ -234,6 +269,23 @@ describe('useNotes', () => {
       });
 
       expect(result.current.notes[0].content).toBe('test');
+    });
+  });
+
+  it('应该报告便签保存失败', async () => {
+    localStorageGetSpy.mockReturnValue(null);
+    localStorageSetSpy.mockImplementation(() => {
+      throw new Error('quota exceeded');
+    });
+
+    const { result } = renderHook(() => useNotes());
+
+    act(() => {
+      result.current.addNote('无法保存', 'happy');
+    });
+
+    await waitFor(() => {
+      expect(result.current.storageError).toContain('便签保存失败');
     });
   });
 });
