@@ -46,6 +46,30 @@ export const MOOD_CONFIG: Record<Mood, MoodConfig> = {
 /** 默认情绪（应用启动时的初始状态） */
 export const DEFAULT_MOOD: Mood = 'calm';
 
+/** 所有合法情绪 key（唯一来源，避免各处重复维护列表） */
+export const MOODS: Mood[] = ['calm', 'happy', 'unhappy', 'anxious', 'excited'];
+
+/** 情绪对应的 emoji（便签、柱状图、周报告共用） */
+export const MOOD_EMOJI: Record<Mood, string> = {
+  calm: '😌',
+  happy: '😊',
+  unhappy: '😢',
+  anxious: '😰',
+  excited: '🤩',
+};
+
+/** 判断任意字符串是否为合法情绪 key */
+export const isMood = (value: string | null | undefined): value is Mood =>
+  !!value && (MOODS as string[]).includes(value);
+
+/**
+ * 创建以情绪为键、初始值相同的记录表
+ *
+ * @example createMoodRecord(0) // { calm: 0, happy: 0, ... }
+ */
+export const createMoodRecord = <T>(initialValue: T): Record<Mood, T> =>
+  MOODS.reduce((acc, mood) => ({ ...acc, [mood]: initialValue }), {} as Record<Mood, T>);
+
 /**
  * LLM 返回的中文情绪 -> Mood key 映射
  *

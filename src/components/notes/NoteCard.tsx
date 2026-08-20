@@ -2,7 +2,7 @@
 
 import { useCallback } from 'react';
 
-import { MOOD_CONFIG } from '@/config/moodConfig';
+import { MOOD_CONFIG, MOOD_EMOJI } from '@/config/moodConfig';
 import type { Note } from '@/types/note';
 
 interface NoteCardProps {
@@ -12,14 +12,6 @@ interface NoteCardProps {
   // eslint-disable-next-line react/require-default-props
   onEdit?: (note: Note) => void;
 }
-
-const MOOD_EMOJI: Record<string, string> = {
-  calm: '😌',
-  happy: '😊',
-  unhappy: '😢',
-  anxious: '😰',
-  excited: '🤩',
-};
 
 const NoteCard = ({ note, onDelete, onEdit }: NoteCardProps) => {
   const config = MOOD_CONFIG[note.mood];

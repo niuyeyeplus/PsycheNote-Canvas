@@ -1,6 +1,6 @@
 'use client';
 
-import { MOOD_CONFIG } from '@/config/moodConfig';
+import { MOOD_CONFIG, MOOD_EMOJI } from '@/config/moodConfig';
 import type { WeekComparison } from '@/types/moodReport';
 
 import MoodBarChart from './MoodBarChart';
@@ -10,14 +10,6 @@ interface MoodReportViewProps {
   // eslint-disable-next-line react/require-default-props
   isLoading?: boolean;
 }
-
-const MOOD_EMOJI: Record<string, string> = {
-  calm: '😌',
-  happy: '😊',
-  unhappy: '😢',
-  anxious: '😰',
-  excited: '🤩',
-};
 
 const getChangeClass = (isPositive: boolean, isNegative: boolean): string => {
   if (isPositive) return 'text-green-500';

@@ -20,16 +20,29 @@ const SYSTEM_PROMPT = `你是一名温柔治愈、共情力很强的情绪陪伴
 重要：你绝对不能输出任何<think>标签或任何类似思考过程的标记。你只能输出一个纯粹的JSON对象，不能有其他任何内容。
 只输出这一行：{"mood":"情绪标签","reply":"你的治愈回复"}`;
 
-function streamLLMReply(userNote, onMood, onChunk, onDone) {
-  const postData = JSON.stringify({
+/** 构造 chat/completions 请求体 */
+function buildPayload(userNote, stream) {
+  const body = {
     model: MODEL,
     messages: [
       { role: 'system', content: SYSTEM_PROMPT },
       { role: 'user', content: `用户便签内容：${userNote}` },
     ],
-    stream: true,
-  });
+  };
+  if (stream) {
+    body.stream = true;
+  }
+  return JSON.stringify(body);
+}
 
+/**
+ * 向 MiniMax chat/completions 发起请求
+ *
+ * @param {string} postData - 请求体
+ * @param {(res: import('http').IncomingMessage) => void} onResponse - 响应处理
+ * @param {(err: Error) => void} onError - 错误处理
+ */
+function postChatCompletion(postData, onResponse, onError) {
   const options = {
     hostname: BASE_URL,
     port: 443,
@@ -42,7 +55,16 @@ function streamLLMReply(userNote, onMood, onChunk, onDone) {
     },
   };
 
-  const req = https.request(options, res => {
+  const req = https.request(options, onResponse);
+  req.on('error', onError);
+  req.write(postData);
+  req.end();
+}
+
+function streamLLMReply(userNote, onMood, onChunk, onDone) {
+  const postData = buildPayload(userNote, true);
+
+  const handleResponse = res => {
     let buffer = '';
     let done = false;
 
@@ -79,60 +101,39 @@ function streamLLMReply(userNote, onMood, onChunk, onDone) {
     });
 
     res.on('end', finish);
-  });
+  };
 
-  req.on('error', e => {
+  postChatCompletion(postData, handleResponse, e => {
     console.error('LLM request error:', e);
     onDone();
   });
-
-  req.write(postData);
-  req.end();
 }
 
 function callLLM(userNote) {
   return new Promise((resolve, reject) => {
-    const postData = JSON.stringify({
-      model: MODEL,
-      messages: [
-        { role: 'system', content: SYSTEM_PROMPT },
-        { role: 'user', content: `用户便签内容：${userNote}` },
-      ],
-    });
+    const postData = buildPayload(userNote, false);
 
-    const options = {
-      hostname: BASE_URL,
-      port: 443,
-      path: '/v1/chat/completions',
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${API_KEY}`,
-        'Content-Length': Buffer.byteLength(postData),
+    postChatCompletion(
+      postData,
+      res => {
+        let data = '';
+
+        res.on('data', chunk => {
+          data += chunk.toString();
+        });
+
+        res.on('end', () => {
+          try {
+            const json = JSON.parse(data);
+            const content = json.choices?.[0]?.message?.content || '';
+            resolve(content);
+          } catch (e) {
+            reject(e);
+          }
+        });
       },
-    };
-
-    const req = https.request(options, res => {
-      let data = '';
-
-      res.on('data', chunk => {
-        data += chunk.toString();
-      });
-
-      res.on('end', () => {
-        try {
-          const json = JSON.parse(data);
-          const content = json.choices?.[0]?.message?.content || '';
-          resolve(content);
-        } catch (e) {
-          reject(e);
-        }
-      });
-    });
-
-    req.on('error', reject);
-    req.write(postData);
-    req.end();
+      reject
+    );
   });
 }
 

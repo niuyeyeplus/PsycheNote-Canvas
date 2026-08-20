@@ -1,6 +1,6 @@
 'use client';
 
-import { MOOD_CONFIG } from '@/config/moodConfig';
+import { MOOD_CONFIG, MOOD_EMOJI } from '@/config/moodConfig';
 import type { MoodCount } from '@/types/moodReport';
 
 interface MoodBarChartProps {
@@ -8,14 +8,6 @@ interface MoodBarChartProps {
   // eslint-disable-next-line react/require-default-props
   maxPercentage?: number;
 }
-
-const MOOD_EMOJI: Record<string, string> = {
-  calm: '😌',
-  happy: '😊',
-  unhappy: '😢',
-  anxious: '😰',
-  excited: '🤩',
-};
 
 const MoodBarChart = ({ moodCounts, maxPercentage = 100 }: MoodBarChartProps) => (
   <div className="space-y-3">

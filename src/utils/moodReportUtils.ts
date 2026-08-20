@@ -3,6 +3,7 @@
  * 提供周分组、情绪统计、周对比等功能
  */
 
+import { createMoodRecord, MOODS } from '@/config/moodConfig';
 import type { Mood } from '@/types/mood';
 import type { MoodCount, WeekReport, WeekComparison } from '@/types/moodReport';
 import type { Note } from '@/types/note';
@@ -78,13 +79,7 @@ export const formatWeekLabel = (weekStart: Date): string => {
  */
 export const calculateMoodCounts = (notes: Note[]): MoodCount[] => {
   // 初始化5种情绪的计数器
-  const counts: Record<Mood, number> = {
-    calm: 0,
-    happy: 0,
-    unhappy: 0,
-    anxious: 0,
-    excited: 0,
-  };
+  const counts = createMoodRecord(0);
 
   notes.forEach(note => {
     counts[note.mood] += 1;
@@ -93,13 +88,12 @@ export const calculateMoodCounts = (notes: Note[]): MoodCount[] => {
   const total = notes.length;
 
   return (
-    (Object.keys(counts) as Mood[])
-      .map(mood => ({
-        mood,
-        count: counts[mood],
-        // 百分比四舍五入到整数，total为0时返回0避免除零
-        percentage: total > 0 ? Math.round((counts[mood] / total) * 100) : 0,
-      }))
+    MOODS.map(mood => ({
+      mood,
+      count: counts[mood],
+      // 百分比四舍五入到整数，total为0时返回0避免除零
+      percentage: total > 0 ? Math.round((counts[mood] / total) * 100) : 0,
+    }))
       // 过滤掉没有记录的的情绪，保持数组简洁
       .filter(item => item.count > 0)
   );
@@ -186,13 +180,7 @@ export const getWeekReport = (weekGroup: WeekGroup): WeekReport => {
  */
 export const compareWeeks = (current: WeekReport, previous: WeekReport | null): WeekComparison => {
   // 初始化所有情绪变化为0
-  const moodChange: Record<Mood, number> = {
-    calm: 0,
-    happy: 0,
-    unhappy: 0,
-    anxious: 0,
-    excited: 0,
-  };
+  const moodChange = createMoodRecord(0);
 
   if (previous) {
     // 计算本周各情绪与上周的差值
