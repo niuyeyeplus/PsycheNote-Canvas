@@ -41,7 +41,7 @@ describe('note routes', () => {
             res.on('end', () => {
               server.close();
               expect(res.statusCode).toBe(400);
-              expect(JSON.parse(data)).toEqual({ error: '便签内容不能为空' });
+              expect(JSON.parse(data)).toEqual({ error: '便签内容不能为空，且必须是文字' });
               done();
             });
           }
@@ -100,7 +100,7 @@ describe('note routes', () => {
             res.on('end', () => {
               server.close();
               expect(res.statusCode).toBe(400);
-              expect(JSON.parse(data)).toEqual({ error: '便签内容不能为空' });
+              expect(JSON.parse(data)).toEqual({ error: '便签内容不能为空，且必须是文字' });
               done();
             });
           }
@@ -142,7 +142,7 @@ describe('note routes', () => {
     it('should call streamLLMReply with content and callbacks', done => {
       streamLLMReply.mockImplementation((content, onMood, onChunk, onDone) => {
         onMood('happy');
-        onChunk('Hello');
+        onChunk('{"mood":"开心","reply":"Hello"}');
         onDone();
       });
 
@@ -164,6 +164,7 @@ describe('note routes', () => {
               server.close();
               expect(streamLLMReply).toHaveBeenCalledWith(
                 'test content',
+                expect.any(Function),
                 expect.any(Function),
                 expect.any(Function),
                 expect.any(Function)
@@ -201,6 +202,73 @@ describe('note routes', () => {
           }
         );
         req.write(JSON.stringify({ content: 'valid content here' }));
+        req.end();
+      });
+    });
+
+    it('should emit an SSE error event when the LLM fails', done => {
+      streamLLMReply.mockImplementation((content, onMood, onChunk, onDone, onError) => {
+        onError(new Error('LLM 服务暂时不可用'));
+      });
+
+      const http = require('http');
+      const server = app.listen(0, () => {
+        const port = server.address().port;
+        const req = http.request(
+          {
+            hostname: 'localhost',
+            port,
+            path: '/api/note',
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+          },
+          res => {
+            let data = '';
+            res.on('data', chunk => {
+              data += chunk;
+            });
+            res.on('end', () => {
+              server.close();
+              expect(data).toContain('event: error');
+              expect(data).toContain('LLM 服务暂时不可用');
+              done();
+            });
+          }
+        );
+        req.write(JSON.stringify({ content: 'error content' }));
+        req.end();
+      });
+    });
+
+    it('should emit an SSE error event when the LLM returns no payload', done => {
+      streamLLMReply.mockImplementation((content, onMood, onChunk, onDone) => {
+        onDone();
+      });
+
+      const http = require('http');
+      const server = app.listen(0, () => {
+        const port = server.address().port;
+        const req = http.request(
+          {
+            hostname: 'localhost',
+            port,
+            path: '/api/note',
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+          },
+          res => {
+            let data = '';
+            res.on('data', chunk => {
+              data += chunk;
+            });
+            res.on('end', () => {
+              server.close();
+              expect(data).toContain('event: error');
+              done();
+            });
+          }
+        );
+        req.write(JSON.stringify({ content: 'empty response' }));
         req.end();
       });
     });

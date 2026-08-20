@@ -1,4 +1,4 @@
-import { renderHook, act } from '@testing-library/react';
+import { act, renderHook, waitFor } from '@testing-library/react';
 
 import { useNotes } from '@/hooks/useNotes';
 import type { Mood } from '@/types/mood';
@@ -60,6 +60,20 @@ describe('useNotes', () => {
       const { result } = renderHook(() => useNotes());
 
       expect(result.current.notes).toEqual([]);
+    });
+
+    it('应该保留有效记录并丢弃无效记录', () => {
+      localStorageGetSpy.mockReturnValue(
+        JSON.stringify([
+          { id: 'valid', content: '保留', mood: 'happy', createdAt: '2026-04-29T10:00:00.000Z' },
+          { id: 'invalid', content: 42, mood: 'calm', createdAt: '2026-04-29T11:00:00.000Z' },
+        ])
+      );
+
+      const { result } = renderHook(() => useNotes());
+
+      expect(result.current.notes).toHaveLength(1);
+      expect(result.current.notes[0].id).toBe('valid');
     });
   });
 
@@ -234,6 +248,23 @@ describe('useNotes', () => {
       });
 
       expect(result.current.notes[0].content).toBe('test');
+    });
+  });
+
+  it('应该报告便签保存失败', async () => {
+    localStorageGetSpy.mockReturnValue(null);
+    localStorageSetSpy.mockImplementation(() => {
+      throw new Error('quota exceeded');
+    });
+
+    const { result } = renderHook(() => useNotes());
+
+    act(() => {
+      result.current.addNote('无法保存', 'happy');
+    });
+
+    await waitFor(() => {
+      expect(result.current.storageError).toContain('便签保存失败');
     });
   });
 });

@@ -16,11 +16,12 @@ import type { Note } from '@/types/note';
 
 const MoodTestPage = () => {
   const { currentMood, setMood } = useMood();
-  const { notes, addNote, deleteNote, updateNote } = useNotes();
+  const { notes, addNote, deleteNote, storageError, updateNote } = useNotes();
   const [showBubble, setShowBubble] = useState(false);
   const [replyText, setReplyText] = useState('');
   const [llmMood, setLlmMood] = useState<Mood | null>(null);
   const [isStreaming, setIsStreaming] = useState(false);
+  const [llmError, setLlmError] = useState<string | null>(null);
   const [noteInput, setNoteInput] = useState('');
   const [isInputVisible, setIsInputVisible] = useState(false);
   const [isHistoryVisible, setIsHistoryVisible] = useState(false);
@@ -40,6 +41,7 @@ const MoodTestPage = () => {
     setShowBubble(true);
     setReplyText('');
     setLlmMood(null);
+    setLlmError(null);
     setIsStreaming(true);
     setIsInputVisible(false);
 
@@ -54,13 +56,21 @@ const MoodTestPage = () => {
         signal: abortControllerRef.current.signal,
       });
 
-      if (!response.ok) return;
+      if (!response.ok) {
+        setLlmError('发送失败，请稍后再试。');
+        return;
+      }
 
       const reader = response.body?.getReader();
-      if (!reader) return;
+      if (!reader) {
+        setLlmError('暂时无法读取回复，请稍后再试。');
+        return;
+      }
 
       const decoder = new TextDecoder();
       let buffer = '';
+      let receivedText = '';
+      let streamError: string | null = null;
 
       // eslint-disable-next-line no-constant-condition
       while (true) {
@@ -79,6 +89,12 @@ const MoodTestPage = () => {
             if (data && data !== '[DONE]') {
               try {
                 const json = JSON.parse(data);
+                if (json.error) {
+                  streamError = String(json.error);
+                  setLlmError(streamError);
+                  reader.cancel().catch(() => undefined);
+                  break;
+                }
                 if (json.mood) {
                   const moodKey = CHINESE_MOOD_MAP[json.mood as string];
                   if (moodKey) {
@@ -88,20 +104,30 @@ const MoodTestPage = () => {
                   }
                 }
                 if (json.text) {
+                  receivedText += json.text;
                   setReplyText(prev => prev + json.text);
                 }
-              } catch {
-                // Ignore parse errors
+              } catch (error) {
+                console.error('解析回复数据失败:', error);
+                streamError = '回复数据格式异常，请稍后再试。';
+                setLlmError(streamError);
+                break;
               }
             }
           }
         }
+        if (streamError) break;
+      }
+
+      if (!streamError && !detectedMood && !receivedText) {
+        setLlmError('没有收到有效回复，请稍后再试。');
       }
     } catch (error) {
       if (error instanceof Error && error.name === 'AbortError') {
         // Request cancelled
       } else {
         console.error('Error sending note:', error);
+        setLlmError('发送失败，请检查网络后再试。');
       }
     } finally {
       setIsStreaming(false);
@@ -115,6 +141,7 @@ const MoodTestPage = () => {
     setShowBubble(false);
     setReplyText('');
     setLlmMood(null);
+    setLlmError(null);
   }, []);
 
   const handleCreateNote = () => {
@@ -140,6 +167,7 @@ const MoodTestPage = () => {
       <FloatingDecorations />
       <CatCompanion mood={currentMood} />
       <LLMReplyBubble
+        error={llmError}
         replyText={replyText}
         mood={llmMood}
         isVisible={showBubble}
@@ -269,6 +297,11 @@ const MoodTestPage = () => {
           </h1>
         </div>
         <p className="text-gray-600 font-medium">你的情绪气象站 · 记录每一刻的心情</p>
+        {storageError && (
+          <p className="mt-2 rounded-full bg-amber-100/80 px-4 py-1 text-sm text-amber-700 shadow-sm">
+            {storageError}
+          </p>
+        )}
 
         <NoteGrid
           notes={notes}

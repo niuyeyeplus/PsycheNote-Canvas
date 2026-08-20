@@ -14,10 +14,24 @@
 
 import { useState, useEffect, useCallback } from 'react';
 
+import { readStorage, writeStorage } from '@/lib/storage';
 import type { Mood } from '@/types/mood';
 import type { Note } from '@/types/note';
 
 const STORAGE_KEY = 'psychenote-notes';
+const VALID_MOODS: Mood[] = ['calm', 'happy', 'unhappy', 'anxious', 'excited'];
+
+const isValidNote = (value: unknown): value is Note => {
+  if (typeof value !== 'object' || value === null) return false;
+  const candidate = value as Record<string, unknown>;
+  return (
+    typeof candidate.id === 'string' &&
+    typeof candidate.content === 'string' &&
+    typeof candidate.mood === 'string' &&
+    VALID_MOODS.includes(candidate.mood as Mood) &&
+    typeof candidate.createdAt === 'string'
+  );
+};
 
 /**
  * 生成唯一 ID
@@ -43,25 +57,40 @@ const generateId = () => `${Date.now()}-${Math.random().toString(36).slice(2, 9)
  */
 export const useNotes = () => {
   const [notes, setNotes] = useState<Note[]>([]);
+  const [isHydrated, setIsHydrated] = useState(false);
+  const [storageError, setStorageError] = useState<string | null>(null);
 
   // 初始化：从 localStorage 恢复数据
   useEffect(() => {
-    const stored = localStorage.getItem(STORAGE_KEY);
-    if (stored) {
+    const storedNotes = readStorage(STORAGE_KEY, rawValue => {
       try {
-        const parsed = JSON.parse(stored) as Note[];
-        // 验证是数组类型
-        if (Array.isArray(parsed)) {
-          // 按创建时间升序排列（最旧的在前，最新的在后）
-          parsed.sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
-          setNotes(parsed);
+        const parsed: unknown = JSON.parse(rawValue);
+        if (!Array.isArray(parsed)) {
+          console.error('本地便签数据不是有效数组');
+          return [];
         }
-      } catch {
-        // JSON 解析失败时忽略，使用空数组
-        // 这确保了损坏的 localStorage 数据不会导致应用崩溃
+        const validNotes = parsed.filter(isValidNote);
+        const droppedCount = parsed.length - validNotes.length;
+        if (droppedCount > 0) {
+          console.error(`本地便签数据有 ${droppedCount} 条无效记录，已忽略`);
+        }
+        return validNotes.sort(
+          (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+        );
+      } catch (error) {
+        console.error('本地便签数据解析失败:', error);
+        return [];
       }
-    }
+    });
+    if (storedNotes) setNotes(storedNotes);
+    setIsHydrated(true);
   }, []);
+
+  useEffect(() => {
+    if (!isHydrated) return;
+    const succeeded = writeStorage(STORAGE_KEY, JSON.stringify(notes));
+    setStorageError(succeeded ? null : '便签保存失败，可能是浏览器存储空间不足。');
+  }, [isHydrated, notes]);
 
   /**
    * 添加新便签
@@ -82,15 +111,11 @@ export const useNotes = () => {
       createdAt: new Date().toISOString(),
     };
 
-    setNotes(prev => {
-      // 追加新便签并按时间排序
-      const updated = [...prev, newNote].sort(
+    setNotes(prev =>
+      [...prev, newNote].sort(
         (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
-      );
-      // 持久化到 localStorage
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
-      return updated;
-    });
+      )
+    );
   }, []);
 
   /**
@@ -100,11 +125,7 @@ export const useNotes = () => {
    * @note 如果 ID 不存在，filter 会忽略，不会报错
    */
   const deleteNote = useCallback((id: string) => {
-    setNotes(prev => {
-      const updated = prev.filter(n => n.id !== id);
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
-      return updated;
-    });
+    setNotes(prev => prev.filter(n => n.id !== id));
   }, []);
 
   /**
@@ -118,12 +139,8 @@ export const useNotes = () => {
    * @param content - 新的便签内容
    */
   const updateNote = useCallback((id: string, content: string) => {
-    setNotes(prev => {
-      const updated = prev.map(n => (n.id === id ? { ...n, content } : n));
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
-      return updated;
-    });
+    setNotes(prev => prev.map(n => (n.id === id ? { ...n, content } : n)));
   }, []);
 
-  return { notes, addNote, deleteNote, updateNote };
+  return { notes, addNote, deleteNote, storageError, updateNote };
 };
