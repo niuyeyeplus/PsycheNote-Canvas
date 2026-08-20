@@ -2,6 +2,8 @@
 
 import { useEffect, useState, useRef } from 'react';
 
+import CloseButton from '@/components/common/CloseButton';
+import { MOOD_CONFIG } from '@/config/moodConfig';
 import type { Mood } from '@/types/mood';
 
 interface LLMReplyBubbleProps {
@@ -71,13 +73,10 @@ const LLMReplyBubble = ({ replyText, mood, isVisible, onClose }: LLMReplyBubbleP
         />
 
         {/* 关闭按钮 */}
-        <button
-          type="button"
+        <CloseButton
           onClick={onClose}
-          className="absolute -top-2 -right-2 w-6 h-6 bg-purple-100 hover:bg-purple-200 rounded-full flex items-center justify-center text-purple-400 hover:text-purple-600 transition-colors shadow-sm border border-white/50"
-        >
-          ✕
-        </button>
+          className="absolute -top-2 -right-2 w-6 h-6 shadow-sm border border-white/50"
+        />
 
         {/* 情绪标签 */}
         {mood && (
@@ -89,11 +88,7 @@ const LLMReplyBubble = ({ replyText, mood, isVisible, onClose }: LLMReplyBubbleP
                 fontFamily: "'Nunito', sans-serif",
               }}
             >
-              {mood === 'calm' && '平静'}
-              {mood === 'happy' && '开心'}
-              {mood === 'unhappy' && '不开心'}
-              {mood === 'anxious' && '焦虑'}
-              {mood === 'excited' && '兴奋'}
+              {MOOD_CONFIG[mood].label}
             </span>
           </div>
         )}

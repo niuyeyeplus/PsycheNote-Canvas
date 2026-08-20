@@ -32,3 +32,12 @@ export const CAT_IDLE_DURATION = 10000; // 10秒触发一次
 
 export const CAT_IDLE_EMOJI = '🐱';
 export const CAT_SIZE = '64px';
+
+/** 猫咪在各情绪下的表情 */
+export const CAT_MOOD_EMOJI: Record<Mood, string> = {
+  calm: '😺',
+  happy: '😸',
+  excited: '😻',
+  unhappy: '😿',
+  anxious: '🙀',
+};

@@ -2,6 +2,8 @@
 
 import { useState, useMemo } from 'react';
 
+import CloseButton from '@/components/common/CloseButton';
+import ModalOverlay from '@/components/common/ModalOverlay';
 import type { Note } from '@/types/note';
 import {
   getWeekStart,
@@ -63,10 +65,7 @@ const HistoryModal = ({ notes, onClose, onDeleteNote, onEditNote }: HistoryModal
   const currentGroup = weekGroups[0];
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 backdrop-blur-sm"
-      onClick={onClose}
-    >
+    <ModalOverlay onClose={onClose}>
       <div
         className="bg-white rounded-3xl shadow-2xl overflow-hidden"
         style={{
@@ -78,13 +77,7 @@ const HistoryModal = ({ notes, onClose, onDeleteNote, onEditNote }: HistoryModal
       >
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
           <h2 className="text-lg font-bold text-purple-600">历史便签</h2>
-          <button
-            type="button"
-            onClick={onClose}
-            className="w-8 h-8 bg-purple-100 hover:bg-purple-200 rounded-full flex items-center justify-center text-purple-400 hover:text-purple-600 transition-colors"
-          >
-            ✕
-          </button>
+          <CloseButton onClick={onClose} className="w-8 h-8" />
         </div>
 
         {/* Tab 切换 */}
@@ -142,7 +135,7 @@ const HistoryModal = ({ notes, onClose, onDeleteNote, onEditNote }: HistoryModal
           )}
         </div>
       </div>
-    </div>
+    </ModalOverlay>
   );
 };
 

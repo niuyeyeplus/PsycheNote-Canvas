@@ -7,6 +7,7 @@ import FloatingDecorations from '@/components/FloatingDecorations';
 import LLMReplyBubble from '@/components/LLMReplyBubble';
 import MoodBackground from '@/components/MoodBackground';
 import HistoryModal from '@/components/notes/HistoryModal';
+import NoteEditorModal from '@/components/notes/NoteEditorModal';
 import NoteGrid from '@/components/notes/NoteGrid';
 import { CHINESE_MOOD_MAP } from '@/config/moodConfig';
 import { useMood } from '@/hooks/useMood';
@@ -147,99 +148,27 @@ const MoodTestPage = () => {
       />
 
       {isInputVisible && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 backdrop-blur-sm">
-          <div
-            className="bg-white/95 rounded-3xl px-6 py-5 shadow-2xl border-2 border-white/50"
-            style={{
-              minWidth: '360px',
-              maxWidth: '480px',
-              background:
-                'linear-gradient(135deg, rgba(255,255,255,0.98) 0%, rgba(248,240,252,0.95) 100%)',
-            }}
-          >
-            <h3
-              className="text-lg font-bold text-purple-600 mb-4 text-center"
-              style={{ fontFamily: "'Nunito', sans-serif" }}
-            >
-              记录此刻的心情
-            </h3>
-            <textarea
-              value={noteInput}
-              onChange={e => setNoteInput(e.target.value)}
-              placeholder="写下你的心情..."
-              className="w-full px-4 py-3 rounded-2xl border-2 border-purple-200 focus:border-purple-400 focus:outline-none text-gray-700 resize-none"
-              style={{
-                fontFamily: "'Nunito', sans-serif",
-                minHeight: '120px',
-              }}
-            />
-            <div className="flex gap-3 mt-4 justify-end">
-              <button
-                type="button"
-                onClick={() => setIsInputVisible(false)}
-                className="px-4 py-2 rounded-xl text-gray-500 hover:bg-gray-100 transition-colors font-medium"
-              >
-                取消
-              </button>
-              <button
-                type="button"
-                onClick={handleSendNote}
-                disabled={!noteInput.trim() || isStreaming}
-                className="px-6 py-2 rounded-xl bg-purple-500 hover:bg-purple-600 text-white font-bold shadow-md transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {isStreaming ? '发送中...' : '发送'}
-              </button>
-            </div>
-          </div>
-        </div>
+        <NoteEditorModal
+          title="记录此刻的心情"
+          value={noteInput}
+          onChange={setNoteInput}
+          onCancel={() => setIsInputVisible(false)}
+          onSubmit={handleSendNote}
+          submitLabel="发送"
+          submittingLabel="发送中..."
+          isSubmitting={isStreaming}
+        />
       )}
 
       {editingNote && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 backdrop-blur-sm">
-          <div
-            className="bg-white/95 rounded-3xl px-6 py-5 shadow-2xl border-2 border-white/50"
-            style={{
-              minWidth: '360px',
-              maxWidth: '480px',
-              background:
-                'linear-gradient(135deg, rgba(255,255,255,0.98) 0%, rgba(248,240,252,0.95) 100%)',
-            }}
-          >
-            <h3
-              className="text-lg font-bold text-purple-600 mb-4 text-center"
-              style={{ fontFamily: "'Nunito', sans-serif" }}
-            >
-              编辑便签
-            </h3>
-            <textarea
-              value={editInput}
-              onChange={e => setEditInput(e.target.value)}
-              placeholder="写下你的心情..."
-              className="w-full px-4 py-3 rounded-2xl border-2 border-purple-200 focus:border-purple-400 focus:outline-none text-gray-700 resize-none"
-              style={{
-                fontFamily: "'Nunito', sans-serif",
-                minHeight: '120px',
-              }}
-            />
-            <div className="flex gap-3 mt-4 justify-end">
-              <button
-                type="button"
-                onClick={() => setEditingNote(null)}
-                className="px-4 py-2 rounded-xl text-gray-500 hover:bg-gray-100 transition-colors font-medium"
-              >
-                取消
-              </button>
-              <button
-                type="button"
-                onClick={handleSaveEdit}
-                disabled={!editInput.trim()}
-                className="px-6 py-2 rounded-xl bg-purple-500 hover:bg-purple-600 text-white font-bold shadow-md transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                保存
-              </button>
-            </div>
-          </div>
-        </div>
+        <NoteEditorModal
+          title="编辑便签"
+          value={editInput}
+          onChange={setEditInput}
+          onCancel={() => setEditingNote(null)}
+          onSubmit={handleSaveEdit}
+          submitLabel="保存"
+        />
       )}
 
       {isHistoryVisible && (

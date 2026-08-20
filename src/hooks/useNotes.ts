@@ -14,8 +14,10 @@
 
 import { useState, useEffect, useCallback } from 'react';
 
+import { readJSON, writeJSON } from '@/lib/storage';
 import type { Mood } from '@/types/mood';
 import type { Note } from '@/types/note';
+import { sortNotesByCreatedAt } from '@/utils/noteUtils';
 
 const STORAGE_KEY = 'psychenote-notes';
 
@@ -25,6 +27,8 @@ const STORAGE_KEY = 'psychenote-notes';
  * 保证在极短时间内创建多条便签时 ID 也不会冲突
  */
 const generateId = () => `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+
+const isNoteArray = (value: unknown): value is Note[] => Array.isArray(value);
 
 /**
  * 便签管理 Hook
@@ -44,54 +48,46 @@ const generateId = () => `${Date.now()}-${Math.random().toString(36).slice(2, 9)
 export const useNotes = () => {
   const [notes, setNotes] = useState<Note[]>([]);
 
-  // 初始化：从 localStorage 恢复数据
+  // 初始化：从 localStorage 恢复数据（损坏的数据会被忽略）
   useEffect(() => {
-    const stored = localStorage.getItem(STORAGE_KEY);
+    const stored = readJSON<Note[]>(STORAGE_KEY, isNoteArray);
     if (stored) {
-      try {
-        const parsed = JSON.parse(stored) as Note[];
-        // 验证是数组类型
-        if (Array.isArray(parsed)) {
-          // 按创建时间升序排列（最旧的在前，最新的在后）
-          parsed.sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
-          setNotes(parsed);
-        }
-      } catch {
-        // JSON 解析失败时忽略，使用空数组
-        // 这确保了损坏的 localStorage 数据不会导致应用崩溃
-      }
+      setNotes(sortNotesByCreatedAt(stored));
     }
   }, []);
 
   /**
-   * 添加新便签
+   * 更新便签列表并同步到 localStorage
    *
-   * 逻辑：
-   * 1. 创建新便签对象（带唯一ID和时间戳）
-   * 2. 追加到现有列表并重新排序
-   * 3. 同步到 localStorage
+   * @param update - 基于当前列表返回新列表的函数
+   */
+  const persist = useCallback((update: (prev: Note[]) => Note[]) => {
+    setNotes(prev => {
+      const updated = update(prev);
+      writeJSON(STORAGE_KEY, updated);
+      return updated;
+    });
+  }, []);
+
+  /**
+   * 添加新便签（带唯一 ID 和时间戳），追加后按时间重新排序
    *
    * @param content - 便签内容
    * @param mood - 情绪类型
    */
-  const addNote = useCallback((content: string, mood: Mood) => {
-    const newNote: Note = {
-      id: generateId(),
-      content,
-      mood,
-      createdAt: new Date().toISOString(),
-    };
+  const addNote = useCallback(
+    (content: string, mood: Mood) => {
+      const newNote: Note = {
+        id: generateId(),
+        content,
+        mood,
+        createdAt: new Date().toISOString(),
+      };
 
-    setNotes(prev => {
-      // 追加新便签并按时间排序
-      const updated = [...prev, newNote].sort(
-        (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
-      );
-      // 持久化到 localStorage
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
-      return updated;
-    });
-  }, []);
+      persist(prev => sortNotesByCreatedAt([...prev, newNote]));
+    },
+    [persist]
+  );
 
   /**
    * 删除便签
@@ -99,13 +95,12 @@ export const useNotes = () => {
    * @param id - 要删除的便签 ID
    * @note 如果 ID 不存在，filter 会忽略，不会报错
    */
-  const deleteNote = useCallback((id: string) => {
-    setNotes(prev => {
-      const updated = prev.filter(n => n.id !== id);
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
-      return updated;
-    });
-  }, []);
+  const deleteNote = useCallback(
+    (id: string) => {
+      persist(prev => prev.filter(n => n.id !== id));
+    },
+    [persist]
+  );
 
   /**
    * 更新便签内容
@@ -117,13 +112,12 @@ export const useNotes = () => {
    * @param id - 要更新的便签 ID
    * @param content - 新的便签内容
    */
-  const updateNote = useCallback((id: string, content: string) => {
-    setNotes(prev => {
-      const updated = prev.map(n => (n.id === id ? { ...n, content } : n));
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
-      return updated;
-    });
-  }, []);
+  const updateNote = useCallback(
+    (id: string, content: string) => {
+      persist(prev => prev.map(n => (n.id === id ? { ...n, content } : n)));
+    },
+    [persist]
+  );
 
   return { notes, addNote, deleteNote, updateNote };
 };

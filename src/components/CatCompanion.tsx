@@ -2,7 +2,13 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 
-import { CAT_ANIMATIONS, CAT_IDLE_DURATION, CAT_IDLE_EMOJI } from '@/config/catConfig';
+import {
+  CAT_ANIMATIONS,
+  CAT_IDLE_DURATION,
+  CAT_IDLE_EMOJI,
+  CAT_MOOD_EMOJI,
+  CAT_SIZE,
+} from '@/config/catConfig';
 import type { Mood } from '@/types/mood';
 
 interface CatCompanionProps {
@@ -18,16 +24,7 @@ const CatCompanion = ({ mood }: CatCompanionProps) => {
     const animation = CAT_ANIMATIONS[mood];
 
     setIsAnimating(true);
-
-    // 根据心情切换不同的emoji表情
-    const moodEmojis: Record<Mood, string> = {
-      calm: '😺',
-      happy: '😸',
-      excited: '😻',
-      unhappy: '😿',
-      anxious: '🙀',
-    };
-    setCurrentEmoji(moodEmojis[mood]);
+    setCurrentEmoji(CAT_MOOD_EMOJI[mood]);
 
     setTimeout(() => {
       setIsAnimating(false);
@@ -59,7 +56,7 @@ const CatCompanion = ({ mood }: CatCompanionProps) => {
   return (
     <div
       className={`fixed bottom-5 right-5 z-50 transition-all duration-300 ${animationClass}`}
-      style={{ fontSize: '64px', lineHeight: 1 }}
+      style={{ fontSize: CAT_SIZE, lineHeight: 1 }}
       title="心情猫咪"
     >
       {currentEmoji}
