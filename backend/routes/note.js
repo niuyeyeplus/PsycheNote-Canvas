@@ -4,9 +4,23 @@ const { streamLLMReply } = require('../services/llm');
 const router = express.Router();
 
 router.post('/', (req, res) => {
-  const { content } = req.body;
-  if (!content) {
-    return res.status(400).json({ error: 'content is required' });
+  const { content } = req.body || {};
+  if (
+    content === undefined ||
+    content === null ||
+    (typeof content === 'string' && !content.trim())
+  ) {
+    return res.status(400).json({ error: '便签内容不能为空' });
+  }
+  if (typeof content !== 'string') {
+    return res.status(400).json({ error: 'content must be a string' });
+  }
+
+  const trimmedContent = content.trim();
+  if (trimmedContent.length > 2000) {
+    return res
+      .status(400)
+      .json({ error: 'content must be 2000 characters or fewer' });
   }
 
   res.setHeader('Content-Type', 'text/event-stream');
@@ -73,7 +87,7 @@ router.post('/', (req, res) => {
   };
 
   streamLLMReply(
-    content,
+    trimmedContent,
     mood => sendMood(mood),
     chunk => {
       buffer += chunk;

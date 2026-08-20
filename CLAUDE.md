@@ -62,7 +62,7 @@ src/
     └── utils.ts           # cn() 工具函数
 
 backend/
-├── server.js              # Express 入口（端口 3001）
+├── server.js              # Express 入口（默认端口 3001，可通过 PORT 配置）
 ├── routes/
 │   └── note.js            # POST /api/note — SSE 流式 LLM 回复
 └── services/
@@ -129,6 +129,12 @@ backend/
 | anxious | 标语文字摇摆 (`anxious-phrase`)                        |
 
 ## 后端 LLM 规则
+
+### 后端配置
+
+- `MINIMAX_API_KEY`：MiniMax API 密钥
+- `PORT`：后端端口，默认为 `3001`
+- `ALLOWED_ORIGINS`：逗号分隔的 CORS 允许来源，默认为 `http://localhost:3000`
 
 ### API 端点
 

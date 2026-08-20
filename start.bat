@@ -25,7 +25,7 @@ if not exist "backend\.env" (
     echo [INFO] First time setup - API Key required
     echo Please register at https://platform.minimaxi.com/
     echo.
-    powershell -Command "$apiKey = Read-Host -Prompt 'Enter your API Key'; if ($apiKey) { Set-Content -Path 'backend\.env' -Value \"MINIMAX_API_KEY=$apiKey\" -Encoding UTF8; Write-Host '[OK] API Key saved' } else { Write-Host '[ERROR] API Key cannot be empty!'; exit 1 }"
+    powershell -Command "$secureApiKey = Read-Host -Prompt 'Enter your API Key' -AsSecureString; $apiKey = ([System.Net.NetworkCredential]::new('', $secureApiKey)).Password; if ($apiKey) { Set-Content -Path 'backend\.env' -Value \"MINIMAX_API_KEY=$apiKey\" -Encoding UTF8; Write-Host '[OK] API Key saved' } else { Write-Host '[ERROR] API Key cannot be empty!'; exit 1 }"
     if errorlevel 1 (
         echo.
         pause

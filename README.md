@@ -41,7 +41,11 @@ cd backend && npm install
 
 ```env
 MINIMAX_API_KEY=你的API密钥
+PORT=3001
+ALLOWED_ORIGINS=http://localhost:3000
 ```
+
+`PORT` 和 `ALLOWED_ORIGINS` 可按部署环境调整；多个允许的来源请用英文逗号分隔。
 
 #### 3. 启动服务
 

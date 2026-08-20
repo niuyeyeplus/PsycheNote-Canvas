@@ -24,12 +24,15 @@ if [ ! -f "backend/.env" ]; then
     echo "[INFO] First time setup - API Key required"
     echo "Please register at https://platform.minimaxi.com/"
     echo ""
-    read -p "Enter your API Key: " API_KEY
+    read -r -s -p "Enter your API Key: " API_KEY
+    echo
     if [ -z "$API_KEY" ]; then
         echo "[ERROR] API Key cannot be empty!"
         exit 1
     fi
-    echo "MINIMAX_API_KEY=$API_KEY" > backend/.env
+    umask 077
+    printf 'MINIMAX_API_KEY=%s\n' "$API_KEY" > backend/.env
+    chmod 600 backend/.env
     echo "[OK] API Key saved to backend/.env"
 else
     echo "[OK] API Key already configured"
