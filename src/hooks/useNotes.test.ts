@@ -33,6 +33,18 @@ describe('useNotes', () => {
       expect(result.current.notes).toHaveLength(2);
     });
 
+    it('仅恢复数据时不应该写入 localStorage', () => {
+      localStorageGetSpy.mockReturnValue(
+        JSON.stringify([
+          { id: '1', content: 'test', mood: 'happy', createdAt: '2026-04-29T10:00:00.000Z' },
+        ])
+      );
+
+      renderHook(() => useNotes());
+
+      expect(localStorageSetSpy).not.toHaveBeenCalled();
+    });
+
     it('应该按 createdAt 升序排列', () => {
       const storedNotes = [
         { id: '2', content: 'later', mood: 'happy', createdAt: '2026-04-29T12:00:00.000Z' },
@@ -122,6 +134,7 @@ describe('useNotes', () => {
         result.current.addNote('test', 'excited');
       });
 
+      expect(localStorageSetSpy).toHaveBeenCalledTimes(1);
       expect(localStorageSetSpy).toHaveBeenCalledWith(
         'psychenote-notes',
         expect.stringContaining('test')

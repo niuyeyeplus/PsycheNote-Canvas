@@ -12,7 +12,7 @@
  * localStorage['psychenote-notes'] = JSON.stringify(Note[])
  */
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 
 import { readStorage, writeStorage } from '@/lib/storage';
 import type { Mood } from '@/types/mood';
@@ -58,6 +58,7 @@ const generateId = () => `${Date.now()}-${Math.random().toString(36).slice(2, 9)
 export const useNotes = () => {
   const [notes, setNotes] = useState<Note[]>([]);
   const [storageError, setStorageError] = useState<string | null>(null);
+  const notesRef = useRef<Note[]>([]);
 
   const persistNotes = useCallback((nextNotes: Note[]) => {
     const succeeded = writeStorage(STORAGE_KEY, JSON.stringify(nextNotes));
@@ -86,7 +87,10 @@ export const useNotes = () => {
         return [];
       }
     });
-    if (storedNotes) setNotes(storedNotes);
+    if (storedNotes) {
+      notesRef.current = storedNotes;
+      setNotes(storedNotes);
+    }
   }, []);
 
   /**
@@ -109,13 +113,12 @@ export const useNotes = () => {
         createdAt: new Date().toISOString(),
       };
 
-      setNotes(prev => {
-        const nextNotes = [...prev, newNote].sort(
-          (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
-        );
-        persistNotes(nextNotes);
-        return nextNotes;
-      });
+      const nextNotes = [...notesRef.current, newNote].sort(
+        (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+      );
+      notesRef.current = nextNotes;
+      setNotes(nextNotes);
+      persistNotes(nextNotes);
     },
     [persistNotes]
   );
@@ -128,12 +131,12 @@ export const useNotes = () => {
    */
   const deleteNote = useCallback(
     (id: string) => {
-      setNotes(prev => {
-        const nextNotes = prev.filter(n => n.id !== id);
-        if (nextNotes.length === prev.length) return prev;
-        persistNotes(nextNotes);
-        return nextNotes;
-      });
+      const currentNotes = notesRef.current;
+      const nextNotes = currentNotes.filter(note => note.id !== id);
+      if (nextNotes.length === currentNotes.length) return;
+      notesRef.current = nextNotes;
+      setNotes(nextNotes);
+      persistNotes(nextNotes);
     },
     [persistNotes]
   );
@@ -150,17 +153,13 @@ export const useNotes = () => {
    */
   const updateNote = useCallback(
     (id: string, content: string) => {
-      setNotes(prev => {
-        let didUpdate = false;
-        const nextNotes = prev.map(note => {
-          if (note.id !== id || note.content === content) return note;
-          didUpdate = true;
-          return { ...note, content };
-        });
-        if (!didUpdate) return prev;
-        persistNotes(nextNotes);
-        return nextNotes;
-      });
+      const currentNotes = notesRef.current;
+      const noteToUpdate = currentNotes.find(note => note.id === id);
+      if (!noteToUpdate || noteToUpdate.content === content) return;
+      const nextNotes = currentNotes.map(note => (note.id === id ? { ...note, content } : note));
+      notesRef.current = nextNotes;
+      setNotes(nextNotes);
+      persistNotes(nextNotes);
     },
     [persistNotes]
   );
