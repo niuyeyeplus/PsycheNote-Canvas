@@ -80,6 +80,72 @@ describe('note routes', () => {
       });
     });
 
+    it('should return 400 when content is not a string', done => {
+      const http = require('http');
+      const server = app.listen(0, () => {
+        const port = server.address().port;
+        const req = http.request(
+          {
+            hostname: 'localhost',
+            port,
+            path: '/api/note',
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+          },
+          res => {
+            let data = '';
+            res.on('data', chunk => {
+              data += chunk;
+            });
+            res.on('end', () => {
+              server.close();
+              expect(res.statusCode).toBe(400);
+              expect(JSON.parse(data)).toEqual({
+                error: 'content must be a string',
+              });
+              expect(streamLLMReply).not.toHaveBeenCalled();
+              done();
+            });
+          }
+        );
+        req.write(JSON.stringify({ content: { text: 'not a string' } }));
+        req.end();
+      });
+    });
+
+    it('should return 400 when content exceeds the size limit', done => {
+      const http = require('http');
+      const server = app.listen(0, () => {
+        const port = server.address().port;
+        const req = http.request(
+          {
+            hostname: 'localhost',
+            port,
+            path: '/api/note',
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+          },
+          res => {
+            let data = '';
+            res.on('data', chunk => {
+              data += chunk;
+            });
+            res.on('end', () => {
+              server.close();
+              expect(res.statusCode).toBe(400);
+              expect(JSON.parse(data)).toEqual({
+                error: 'content must be 2000 characters or fewer',
+              });
+              expect(streamLLMReply).not.toHaveBeenCalled();
+              done();
+            });
+          }
+        );
+        req.write(JSON.stringify({ content: 'a'.repeat(2001) }));
+        req.end();
+      });
+    });
+
     it('should return 400 when content is missing', done => {
       const http = require('http');
       const server = app.listen(0, () => {
@@ -173,6 +239,41 @@ describe('note routes', () => {
           }
         );
         req.write(JSON.stringify({ content: 'test content' }));
+        req.end();
+      });
+    });
+
+    it('should trim content before calling streamLLMReply', done => {
+      streamLLMReply.mockImplementation((content, onMood, onChunk, onDone) => {
+        onDone();
+      });
+
+      const http = require('http');
+      const server = app.listen(0, () => {
+        const port = server.address().port;
+        const req = http.request(
+          {
+            hostname: 'localhost',
+            port,
+            path: '/api/note',
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+          },
+          res => {
+            res.on('data', () => {});
+            res.on('end', () => {
+              server.close();
+              expect(streamLLMReply).toHaveBeenCalledWith(
+                'trimmed content',
+                expect.any(Function),
+                expect.any(Function),
+                expect.any(Function)
+              );
+              done();
+            });
+          }
+        );
+        req.write(JSON.stringify({ content: '  trimmed content  ' }));
         req.end();
       });
     });
